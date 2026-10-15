@@ -1,0 +1,14 @@
+/instructor/
+.venv/
+__pycache__/
+*.py[cod]
+.marimo/
+__marimo__/
+verification/
+*.log
+.DS_Store
+/results*.json
+/results*.csv
+
+.cache/
+yolo*.pt

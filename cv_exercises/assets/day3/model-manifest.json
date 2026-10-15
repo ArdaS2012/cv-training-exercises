@@ -1,0 +1,20 @@
+{
+  "foundation": {
+    "clip": {
+      "id": "openai/clip-vit-base-patch32",
+      "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+      "license": "MIT (official OpenAI CLIP repository license; model card use restrictions/disclosures still apply)",
+      "source": "https://huggingface.co/openai/clip-vit-base-patch32",
+      "runtime": "CPU Transformers4.57.1; cache matching image encodings; local preflight downloads official checkpoint.",
+      "weight_file": "pytorch_model.bin"
+    },
+    "sam": {
+      "id": "facebook/sam-vit-base",
+      "revision": "70c1a07f894ebb5b307fd9eaaee97b9dfc16068f",
+      "license": "apache-2.0",
+      "source": "https://huggingface.co/facebook/sam-vit-base",
+      "runtime": "CPU Transformers4.57.1; cache matching image encodings; local preflight downloads official checkpoint.",
+      "weight_file": "model.safetensors"
+    }
+  }
+}

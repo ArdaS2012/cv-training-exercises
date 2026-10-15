@@ -1,0 +1,25 @@
+{
+  "seed": 42,
+  "dataset": "sklearn digits 8\u00d78, normalized /16",
+  "source_rows": 1497,
+  "target_rows": 300,
+  "split_sizes": [
+    180,
+    60,
+    60
+  ],
+  "source_target_disjoint": true,
+  "source_task": "10-class digits",
+  "target_task": "even versus odd digit",
+  "cached_features_shape": [
+    300,
+    48
+  ],
+  "autoencoder_validation_clean_mse": {
+    "clean-4": 0.028979558497667313,
+    "denoise-4": 0.03399055451154709,
+    "clean-16": 0.02171280048787594,
+    "denoise-16": 0.02146504446864128
+  },
+  "torch": "2.8.0+cpu"
+}

@@ -1,0 +1,45 @@
+{
+  "assets": [
+    {
+      "file": "bus.jpg",
+      "bytes": 137419,
+      "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63"
+    },
+    {
+      "file": "foundation-encodings.pt",
+      "bytes": 8395231,
+      "sha256": "e01d114440b0525a4ce36e23c6616b358ef318adc9813616dc3977ca63c6dc1a"
+    },
+    {
+      "file": "pairs.npz",
+      "bytes": 3578,
+      "sha256": "3291762cc472a06d7a9b88bde0d6d32f71c53c3c33dc36c7ff1624f7edb122a3"
+    },
+    {
+      "file": "segmentation.npz",
+      "bytes": 52561,
+      "sha256": "1bfb9b9fb3a9dbf169b30bff6a1959e3d947a7e8011ddbdc549947800c85514f"
+    },
+    {
+      "file": "siamese.pt",
+      "bytes": 16413,
+      "sha256": "521d15a338bda87cecf44fbf22858704f58df336653448aed807a6a563a282b1"
+    },
+    {
+      "file": "unet-centers.pt",
+      "bytes": 28953,
+      "sha256": "0fc6ce738f26751281b84b0f407394ea4ca497fbb701bf4a57bca54aff2ce22a"
+    },
+    {
+      "file": "unet-semantic.pt",
+      "bytes": 29035,
+      "sha256": "81b99db1e108bd1c81d0ff7ca6cdf46e1383a8a264fc1e48af48ba51f56129de"
+    },
+    {
+      "file": "zidane.jpg",
+      "bytes": 50427,
+      "sha256": "16d73869e3267a7d4ed00de8e860833bd1657c1b252e94c0c348277adc7b6edb"
+    }
+  ],
+  "official_large_weights": "Not redistributed; pinned model-manifest.json specifies download/cache revisions."
+}

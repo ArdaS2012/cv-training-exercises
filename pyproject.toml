@@ -1,0 +1,31 @@
+[project]
+name = "cv-training-exercises"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "marimo==0.25.1",
+    "numpy==2.2.6",
+    "scipy==1.16.2",
+    "scikit-learn==1.7.2",
+    "matplotlib==3.10.6",
+    "umap-learn==0.5.9.post2",
+    "torch==2.8.0",
+    "torchvision==0.23.0",
+    "ultralytics==8.3.236",
+    "transformers==4.57.1",
+    "huggingface-hub==0.36.0",
+]
+[tool.marimo.runtime]
+auto_instantiate = true
+on_cell_change = "autorun"
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+[tool.marimo.ai]
+enabled = false
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+torchvision = { index = "pytorch" }
