@@ -7,11 +7,11 @@ from start import DAY2_NOTEBOOKS
 class Day2Assets(unittest.TestCase):
     def test_starter_paths_and_todos(self):
         for path in DAY2_NOTEBOOKS.values():
-            source=(day2.ROOT/'exercises'/path).read_text();ast.parse(source)
+            source=(day2.ROOT/'exercises'/path).read_text(encoding='utf-8');ast.parse(source)
             self.assertIn('# TODO',source);self.assertIn('# END TODO',source)
             self.assertTrue((day2.ROOT/'exercises'/path).with_name('README.md').is_file())
     def test_pretraining_provenance_and_cached_identity(self):
-        provenance=json.loads((day2.ASSETS/'training-provenance.json').read_text())
+        provenance=json.loads((day2.ASSETS/'training-provenance.json').read_text(encoding='utf-8'))
         self.assertTrue(provenance['source_target_disjoint'])
         cache=np.load(day2.ASSETS/'cached-features.npz')
         self.assertEqual(cache['features'].shape,(300,48))

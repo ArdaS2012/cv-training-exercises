@@ -23,7 +23,7 @@ class WorkspaceTests(unittest.TestCase):
     def test_starters_and_selector_paths(self):
         for path in NOTEBOOKS.values():
             p=ROOT/'exercises'/path
-            ast.parse(p.read_text())
-            self.assertIn('# TODO',p.read_text());self.assertIn('# END TODO',p.read_text())
+            ast.parse(p.read_text(encoding='utf-8'))
+            self.assertIn('# TODO',p.read_text(encoding='utf-8'));self.assertIn('# END TODO',p.read_text(encoding='utf-8'))
             self.assertTrue((p.parent/'README.md').is_file())
 if __name__=='__main__':unittest.main()

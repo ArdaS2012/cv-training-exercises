@@ -65,7 +65,7 @@ def cnn_inspect(response,output_size,index=0,stride=1):
     fig,axes=plt.subplots(2,4,figsize=(11,5),layout='constrained')
     for ax,(name,v) in zip(axes.flat,list(stages.items())[:7]+[('VGG block2 channel0',rgb)]):
         ax.imshow(v[0,0].numpy(),cmap='viridis');ax.set_title(name);ax.axis('off')
-    report={'image_id':int(ids[index]),'target':int(y[index]),'prediction':int(scores.argmax(1)),'patch_response':float(value),'predicted_spatial_size':int(predicted),'actual_stride_shape':list(actual.shape),'tiny_trace':trace,'vgg_partial_trace':vtrace,'vgg_full_trace':json.loads((ASSETS/'vgg16-full-shape-trace.json').read_text()),'note':'Maps are actual pretrained activations. VGG digit preview is out of ImageNet domain; first two blocks only.'}
+    report={'image_id':int(ids[index]),'target':int(y[index]),'prediction':int(scores.argmax(1)),'patch_response':float(value),'predicted_spatial_size':int(predicted),'actual_stride_shape':list(actual.shape),'tiny_trace':trace,'vgg_partial_trace':vtrace,'vgg_full_trace':json.loads((ASSETS/'vgg16-full-shape-trace.json').read_text(encoding='utf-8')),'note':'Maps are actual pretrained activations. VGG digit preview is out of ImageNet domain; first two blocks only.'}
     return report,fig
 
 def train_candidate(config,epochs=24):
@@ -170,7 +170,7 @@ def ae_compare(reconstruct,error,index,k,noise):
     report={'image_id':image_id,'latent_width':k,'coordinate_ratio':64/k,'noise_std':noise,'seed':42,'clean_target_mse':{mode:v[1] for mode,v in outputs.items()},'noisy_input_mse':float(nn.functional.mse_loss(noisy,clean)),'units':'normalized intensity squared','note':'latent-only coordinate ratio; not codec bitrate. Changing noise does not train the model.'}
     return report,fig
 
-def detector_snapshot():return json.loads((ASSETS/'detections.json').read_text())
+def detector_snapshot():return json.loads((ASSETS/'detections.json').read_text(encoding='utf-8'))
 
 def prepare_detectors(download=True):
     from ultralytics import YOLO

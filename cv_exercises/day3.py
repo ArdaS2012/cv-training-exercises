@@ -58,7 +58,7 @@ def pair_report(distance,contrastive,threshold=.7):
   for row,key in enumerate(['a','b']):axes[row,i].imshow(d[key][i].reshape(8,8),cmap='gray');axes[row,i].axis('off')
   axes[0,i].set_title(f'pair {i} · d={dist[i]:.2f}')
  return dict(pairs=rows,false_matches=int((decisions&~truth).sum()),missed_matches=int((~decisions&truth).sum()),mean_loss=float(loss.mean()),margin=1.,model='trained shared 64→48→8 unit-normalized pair encoder'),fig
-def model_specs():return json.loads((ASSETS/'model-manifest.json').read_text())
+def model_specs():return json.loads((ASSETS/'model-manifest.json').read_text(encoding='utf-8'))
 def prepare_foundation(online=True):
  from huggingface_hub import snapshot_download
  return {key:snapshot_download(s['id'],revision=s['revision'],cache_dir=str(CACHE/'hub'),local_files_only=not online,allow_patterns=['*.json','*.txt',s.get('weight_file','*.safetensors')],ignore_patterns=['tf*','flax*']) for key,s in model_specs()['foundation'].items()}
@@ -112,7 +112,7 @@ class DomainPipeline:
   return dict(label=self.config['id2label'][str(int(scores.argmax()))],scores=scores.tolist(),revision=self.config['source_revision'])
  @classmethod
  def reload(cls,path):
-  path=Path(path);cfg=json.loads((path/'config.json').read_text());model=day2.TinyCNN(2);model.load_state_dict(torch.load(path/'model.pt',weights_only=True,map_location='cpu'));return cls(model,cfg)
+  path=Path(path);cfg=json.loads((path/'config.json').read_text(encoding='utf-8'));model=day2.TinyCNN(2);model.load_state_dict(torch.load(path/'model.pt',weights_only=True,map_location='cpu'));return cls(model,cfg)
 def adapt_package(config,epochs=40):
  if config is None:return None
  if config.get('trainable')!='head' or config.get('id2label')!={'0':'even','1':'odd'}:raise ValueError('Use head-only tuning with the stated even/odd label order.')
@@ -129,7 +129,7 @@ def adapt_package(config,epochs=40):
  for _ in range(epochs):opt.zero_grad();loss=nn.functional.cross_entropy(model.head(features),target[tr]);loss.backward();opt.step()
  comparison=dict(source_like=evaluate(x),target_shifted=evaluate(shifted));delta={k:float((v-before[k]).abs().max()) for k,v in model.state_dict().items()};revision=hashlib.sha256((day2.ASSETS/'tiny-cnn.pt').read_bytes()).hexdigest()
  cfg=dict(architecture='TinyCNN(2)',source_revision=revision,source_checkpoint='Day2 tiny-cnn.pt',processor=dict(shape=[8,8],channels=1,scale=16.,raw_range=[0,16]),id2label=config['id2label'],task='image-classification',trainable='head',domain_shift='x*.45+.25',epochs=epochs,seed=123,learning_rate=rate,optimizer='Adam')
- path=Path(tempfile.mkdtemp(prefix='cv-inference-package-'));torch.save(model.state_dict(),path/'model.pt');(path/'config.json').write_text(json.dumps(cfg,indent=2));(path/'README.md').write_text('# Teaching digit pipeline\n8×8 even/odd CPU classifier.\n'+json.dumps(cfg,indent=2))
+ path=Path(tempfile.mkdtemp(prefix='cv-inference-package-'));torch.save(model.state_dict(),path/'model.pt');(path/'config.json').write_text(json.dumps(cfg,indent=2),encoding='utf-8');(path/'README.md').write_text('# Teaching digit pipeline\n8×8 even/odd CPU classifier.\n'+json.dumps(cfg,indent=2),encoding='utf-8')
  a=DomainPipeline(model,cfg);b=DomainPipeline.reload(path);sample=(shifted[va[0],0].numpy()*16).tolist();pa=a.predict(sample);pb=b.predict(sample)
  from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
  class Handler(BaseHTTPRequestHandler):

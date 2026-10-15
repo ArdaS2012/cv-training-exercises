@@ -15,7 +15,7 @@ class Day3Assets(unittest.TestCase):
   data,a,b=day3.pairs()
   self.assertEqual(a.shape,(24,8));self.assertEqual(b.shape,a.shape)
   self.assertTrue(np.isfinite(a).all())
-  provenance=json.loads((day3.ASSETS/'teaching-provenance.json').read_text())
+  provenance=json.loads((day3.ASSETS/'teaching-provenance.json').read_text(encoding='utf-8'))
   self.assertFalse(set(provenance['siamese_source_ids'])&set(__import__('cv_exercises.data',fromlist=['images']).images()[2]))
  def test_foundation_manifest(self):
   specs=day3.model_specs()['foundation'];cached=torch.load(day3.ASSETS/'foundation-encodings.pt',weights_only=True)
@@ -25,5 +25,5 @@ class Day3Assets(unittest.TestCase):
  def test_starters_unsupplied(self):
   from start import DAY3_NOTEBOOKS
   for path in DAY3_NOTEBOOKS.values():
-   text=(day3.ROOT/'exercises'/path).read_text();self.assertIn('TODO',text);self.assertIn('=None',text.replace(' ',''))
+   text=(day3.ROOT/'exercises'/path).read_text(encoding='utf-8');self.assertIn('TODO',text);self.assertIn('=None',text.replace(' ',''))
 if __name__=='__main__':unittest.main()
