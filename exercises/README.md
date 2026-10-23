@@ -1,4 +1,4 @@
-# CV Day 1 practices
+# CV practices
 
 ## Exercise + breakout
 
@@ -11,9 +11,11 @@ Every supplied training exercise runs as a 15-minute pair task in breakout rooms
 - [Block 3: Segmentation](day1-block-03-segmentation/README.md)
 - [Block 5: Neural learning](day1-block-05-neural/README.md)
 
-## CV Day 2
+## Day 2
 
 Use `--day 2` with the shared launcher. Follow the README in each owning block; the guide and concepts stay in the trainer materials.
+
+Every total below includes guided preparation, the **15-minute pair-room task**, and plenary comparison.
 
 | Block | Practice | Total setup/practice/review |
 |---|---|---:|

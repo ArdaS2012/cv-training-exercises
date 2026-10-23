@@ -54,7 +54,7 @@ def _(mo):
 def _(data):
     rgb=data.scene()
     color,position=data.pixel_inputs(rgb)
-    return color, rgb
+    return color, position, rgb
 
 
 @app.cell(hide_code=True)
@@ -74,7 +74,7 @@ def _(mo, prediction):
 
 
 @app.cell
-def _():
+def _(color, np, position, spatial_weight):
     # TODO 1: combine color and weighted position as feature columns.
     spatial_features=None
     # END TODO 1
@@ -86,11 +86,11 @@ def _(cluster_count, color, spatial_features):
     from sklearn.cluster import KMeans
     color_labels=KMeans(n_clusters=cluster_count.value,random_state=42,n_init=10).fit_predict(color)
     spatial_labels=None if spatial_features is None else KMeans(n_clusters=cluster_count.value,random_state=42,n_init=10).fit_predict(spatial_features)
-    return (color_labels,)
+    return color_labels, spatial_labels
 
 
 @app.cell
-def _():
+def _(rgb, spatial_labels):
     # TODO 2: restore H×W labels when spatial_labels is ready; otherwise None.
     spatial_mask=None
     # END TODO 2

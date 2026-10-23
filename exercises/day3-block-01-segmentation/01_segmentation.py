@@ -14,7 +14,7 @@ def _():
     import json
     from cv_exercises import day3,display
 
-    return day3, display, json, mo
+    return day3, display, json, mo, np
 
 
 @app.cell(hide_code=True)
@@ -73,7 +73,7 @@ def _(mo):
 
 
 @app.cell
-def _():
+def _(np):
     def select_class(labels,class_id):
         # TODO 1: Boolean membership for this class.
         mask=None

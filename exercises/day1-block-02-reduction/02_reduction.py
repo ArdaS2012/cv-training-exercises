@@ -66,7 +66,7 @@ def _(data, np):
     mean=x.mean(axis=0)
     centered=x-mean
     u,singular,vt=np.linalg.svd(centered,full_matrices=False)
-    return sample_ids, singular, x, y
+    return centered, mean, sample_ids, singular, vt, x, y
 
 
 @app.cell(hide_code=True)
@@ -77,7 +77,7 @@ def _(mo, prediction):
 
 
 @app.cell
-def _():
+def _(centered, components, mean, vt):
     # TODO 1: three small expressions for basis, projection, reconstruction.
     basis=None
     projected=None

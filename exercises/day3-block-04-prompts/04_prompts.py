@@ -14,7 +14,7 @@ def _():
     import json
     from cv_exercises import day3,display
 
-    return day3, display, json, mo
+    return day3, display, json, mo, np
 
 
 @app.cell(hide_code=True)
@@ -79,7 +79,7 @@ def _(mo):
 
 
 @app.cell
-def _():
+def _(np):
     def text_candidates():
         # TODO 1: parallel label descriptions for this image comparison.
         candidates=None

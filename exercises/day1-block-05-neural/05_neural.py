@@ -68,7 +68,7 @@ def _(mo, prediction):
 
 
 @app.cell
-def _():
+def _(np):
     def activation(z):
         # TODO 1: one elementwise activation expression.
         activated=None

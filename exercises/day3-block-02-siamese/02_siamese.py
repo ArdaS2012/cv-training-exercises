@@ -14,7 +14,7 @@ def _():
     import json
     from cv_exercises import day3,display
 
-    return day3, display, mo
+    return day3, display, mo, np
 
 
 @app.cell(hide_code=True)
@@ -72,7 +72,7 @@ def _(mo):
 
 
 @app.cell
-def _():
+def _(np):
     def distance(a,b):
         # TODO 1: one Euclidean distance per pair.
         distances=None

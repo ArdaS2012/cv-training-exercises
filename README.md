@@ -6,7 +6,7 @@ Every supplied training exercise runs as a 15-minute pair task in breakout rooms
 
 Day 1 contains four prepared marimo notebooks: clustering, dimensionality reduction, pixel segmentation and a tiny neural classifier. You need programming familiarity, but no GPU, API key or paid service. Day 1 needs no model downloads. Day 2 adds five practices: CNN/VGG inspection, controlled model improvement, transfer/fine-tuning, autoencoders and detection. Small pretrained teaching assets are bundled. The detection practice uses genuine YOLO11n and SSDLite320 pretrained models; its online preflight downloads their official weights into the local ignored cache. No GPU is required.
 
-[Choose a practice](exercises/README.md). Work in pairs. Most code is prepared; complete only the marked short TODO areas, then compare and explain real results.
+[Choose a practice](exercises/README.md). Each scheduled exercise includes a 15-minute pair task in breakout rooms, after guided preparation. Swap editor/checker roles halfway. Complete the short TODOs, compare one controlled change, then bring a prediction, measured result and limitation to plenary. The same task stays available in the notebook and its `GROUP_TASK.md`.
 
 ## Get the workspace
 
@@ -26,7 +26,6 @@ access to the private training repository.
 Install [uv from its official instructions](https://docs.astral.sh/uv/getting-started/installation/) for your operating system, then reopen the terminal. In the extracted workspace run:
 
 ```sh
-uv python install 3.12
 uv sync --locked
 uv run --locked python start.py --block 1 --check
 uv run --locked python start.py --block 1
@@ -44,21 +43,21 @@ Before class, run each Day 2 selector with `--check`, including Block 5 online t
 
 ## Day 3 setup and selectors
 
-Day3 selectors are **1,2,4,5**: deep masks, Siamese pairs, vision prompts, adaptation/deployment. Block3 uses presenter-led diagrams, with no notebook or breakout room. After shared sync: `uv run --locked python start.py --day 3 --block 1 --check`, then omit `--check` to open. Windows: `start.cmd --day 3 --block 2`; macOS/Linux: `sh ./start.sh --day 3 --block 2`. Use `--port 2724` if another day is running.
+Day 3 selectors are **1,2,4,5**: deep masks, Siamese pairs, vision prompts, adaptation/deployment. Block3 uses presenter-led diagrams, with no notebook or breakout room. After shared sync: `uv run --locked python start.py --day 3 --block 1 --check`, then omit `--check` to open. Windows: `start.cmd --day 3 --block 2`; macOS/Linux: `sh ./start.sh --day 3 --block 2`. Use `--port 2724` if another day is running.
 
-Preflight all four selectors online. Block4 needs approximately1GB of official CLIP/SAM weights on the first check; its progress completes before the notebook is opened. Then check `uv run --offline --locked python start.py --day 3 --block 4 --offline-assets --check`; add `--offline-assets` to its offline launch. All other Day3 model assets are bundled. [Day3 model/data provenance](cv_exercises/assets/day3/README.md). The four starters contain short concept TODOs with waiting states; support code performs genuine CPU computation, plotting and local serving. Save edited code and separately download observations, mask images and the reloadable inference ZIP. No Hub credentials or paid deployment is required.
+Preflight all four selectors online. Block 4 needs approximately 1 GB of official CLIP/SAM weights on the first check; its progress completes before the notebook is opened. Then check `uv run --offline --locked python start.py --day 3 --block 4 --offline-assets --check`; add `--offline-assets` to its offline launch. All other Day 3 model assets are bundled. [Day 3 model/data provenance](cv_exercises/assets/day3/README.md). The four starters contain short concept TODOs with waiting states; support code performs genuine CPU computation, plotting and local serving. Save edited code and separately download observations, mask images and the reloadable inference ZIP. No Hub credentials or paid deployment is required.
 
 ## Work, save and stop
 
 Open the TODO cell’s code control, edit the `None` placeholders and run with **Shift+Enter**. Waiting messages are expected in a fresh starter. The supplied controls and independent tasks remain usable. Save code with **Ctrl+S** (macOS: **Command+S**). Download findings to retain predictions, control settings, plots’ data and written observations; browser widget values are not stored by saving Python. Reloading restores saved code and default controls.
 
-Leave the terminal open while working. **Ctrl+C** stops the editor. Restart with the same selector. Use `--port 2721` if another notebook already uses 2720. Replace only the indicated TODOs before changing supplied plumbing.
+Leave the terminal open while working. Save and stop the current editor with **Ctrl+C** before selecting another day/block. Restart with the same selector. Use `--port 2721` if another notebook already uses 2720. Replace only the indicated TODOs before changing supplied plumbing.
 
 ## Pre-class and offline checks
 
 Run online `uv sync --locked`, then each selector’s `--check` before class. After successful sync, `uv run --offline --locked python start.py --block 2 --check` and the corresponding launch use the cached environment. SVD and optimizer computations run locally. The first UMAP compilation may take several seconds; press the supplied nonlinear run control and wait for real output.
 
-This workspace was executed on Linux. A Windows/macOS/Linux CI workflow is supplied, but remote CI and managed classroom machines have not been witnessed. If a managed proxy blocks installation, use your organization’s approved proxy/certificate setup; do not disable TLS verification. Request trainer help before class.
+The pinned PyTorch environment is not guaranteed on Intel Macs; confirm compatibility with the trainer before class. This workspace was executed on Linux. A Windows/macOS/Linux CI workflow is supplied, but remote CI and managed classroom machines have not been witnessed. If a managed proxy blocks installation, use your organization’s approved proxy/certificate setup; do not disable TLS verification. Request trainer help before class.
 
 ## Troubleshooting
 
@@ -74,5 +73,3 @@ This workspace was executed on Linux. A Windows/macOS/Linux CI workflow is suppl
 The digit examples use `sklearn.datasets.load_digits`: 8×8 grayscale digit images from the UCI Optical Recognition of Handwritten Digits source, bundled with scikit-learn. We use the first 30 samples per digit class and normalize original 0..16 intensities by 16. [Dataset attribution and description](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_digits.html). The segmentation scene and geometric examples are authored teaching data. No performance figure is a claim about arbitrary photographs or a production model.
 
 The neural experiment reserves disjoint 180 training / 60 validation / 60 test rows. It displays validation predictions; the test split stays unused. In clustering and projection, labels are for interpretation only and do not fit the unsupervised methods.
-
-Instructor solutions and answer-based checks are local under ignored `instructor/`. They are excluded from the student archive and must never enter public tests or Git history.
