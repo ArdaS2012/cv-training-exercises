@@ -1,8 +1,12 @@
-# Exercise: test a training intervention
+# Training clinic: can you defend an improvement?
 
-**Exercise + breakout · CV Day 2 Block 2 · 15 minutes in pairs**
+**Exercise + breakout · CV Day 2 Block 2 · 30 minutes in pairs**
 
-Learning goal: Make a controlled improvement decision without leaking test evidence into selection.
+Your job is to produce a defensible decision from the actual outputs, including a result that challenges your first guess. One partner edits; the other checks controls, arithmetic and visual evidence. Swap at minute 15.
+
+## Keep these slide takeaways beside your experiment
+
+Parameters are learned; hyperparameters are chosen. Hold split, seed and budget fixed. Choose by validation loss; reserve test data until the decision is frozen. A lower training loss alone is insufficient.
 
 ## Before the room opens
 
@@ -10,20 +14,26 @@ Show the training/validation curves as a presenter-led worked example. Open the 
 
 Use the [shared setup](../../README.md); model downloads and launch checks happen before the task. Start from the repository root with `uv run --locked python start.py --day 2 --block 2`. Keep the starter open. Prerequisite TODOs discussed in plenary belong to setup; the task below is the room assignment.
 
-## Your group task
+## Your investigation
 
-1. Predict the effect of rate 0.03 or penalty 0.001; choose one factor only. Complete the configuration TODO and run the two supplied 24-epoch CPU trainings.
+1. Inspect the baseline settings (rate 0.01, penalty 0). Predict the training/validation curve change for either a rate or penalty intervention; write which outcome would contradict your hypothesis.
 
-2. Complete validation selection. Compare curves and the declared validation losses, reporting a result that supports or contradicts your hypothesis and an alternative explanation.
+2. Complete configuration and validation-selection TODOs. Run the supplied short CPU trainings with just that factor changed. Read both curves, not only the last number; record a point where their behavior differs.
 
-3. Freeze the selected configuration, then use the reserved-test action once. Explain why using this test score for another tuning decision would invalidate its final-evaluation role.
+3. Swap roles. Test a second value of the SAME factor, holding the other setting, split, seed and budget fixed. Save both comparisons before rerunning; choose using the declared validation loss only.
 
-## Bring back
+4. Look for a contrary result: a faster initial loss drop, better training fit or larger penalty that did not give the best validation outcome. Explain it using the measured short-run curves; if absent, inspect the labelled longer-run reference without mixing its budget into your live comparison.
 
-Configuration/curve table, validation-based choice, one reserved-test result and an uncertainty statement.
+5. Freeze your candidate choice and justification, then use the reserved-test action once. Report that estimate without retuning. Explain what small data, one seed and the short budget prevent you from claiming.
 
-Use the notebook’s prediction/observation fields. Save the Python source and download findings to retain browser inputs and measurements. Both partners should be able to explain the conclusion; swap editor/checker around halfway. If you finish early, state a competing explanation and a new controlled test that would distinguish it.
+## Evidence to bring back
+
+Keep a short comparison log with columns **run | changed factor/value | train-curve evidence | validation loss | decision before test**. Save run A before changing settings: the notebook’s current report is replaced when controls rerun. Download each comparison figure/report plus the experiment log. Save the Python source separately; browser inputs are not saved in it.
+
+Bring one prediction, measured comparison, marked visual example or traced response, a decision and one limitation. Both partners must explain why the evidence supports it.
 
 ## Work within the timebox
 
-2 minutes to predict and agree; 7 to implement and compare; 4 to diagnose and defend; 2 to record/export. Ask for help through the trainer’s chat/room-visit route if blocked. Return to plenary for review and the scheduled quiz. Honest unchanged or failed results count as evidence when they are explained; do not invent measurements.
+0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
+
+If blocked, ask through the trainer’s chat/room-visit route. Use the working partner’s device if needed. Honest unchanged or worse outputs count when explained; label a supplied measured fallback instead of claiming fresh inference.

@@ -62,10 +62,14 @@ def cnn_inspect(response,output_size,index=0,stride=1):
     with torch.no_grad():
         for layer in vgg:
             rgb=layer(rgb);vtrace.append({'stage':type(layer).__name__,'shape':list(rgb.shape)})
-    fig,axes=plt.subplots(2,4,figsize=(11,5),layout='constrained')
-    for ax,(name,v) in zip(axes.flat,list(stages.items())[:7]+[('VGG block2 channel0',rgb)]):
-        ax.imshow(v[0,0].numpy(),cmap='viridis');ax.set_title(name);ax.axis('off')
-    report={'image_id':int(ids[index]),'target':int(y[index]),'prediction':int(scores.argmax(1)),'patch_response':float(value),'predicted_spatial_size':int(predicted),'actual_stride_shape':list(actual.shape),'tiny_trace':trace,'vgg_partial_trace':vtrace,'vgg_full_trace':json.loads((ASSETS/'vgg16-full-shape-trace.json').read_text(encoding='utf-8')),'note':'Maps are actual pretrained activations. VGG digit preview is out of ImageNet domain; first two blocks only.'}
+    # Keep the pretrained network trace fixed; show the isolated stride probe explicitly.
+    fig,axes=plt.subplots(3,3,figsize=(11,8),layout='constrained')
+    panels=list(stages.items())[:7]+[(f'Isolated conv1 stride={stride}',actual.detach()),('VGG block2 channel0',rgb)]
+    probe_min=float(c1[0,0].min());probe_max=float(c1[0,0].max())
+    for ax,(name,v) in zip(axes.flat,panels):
+        scale={'vmin':probe_min,'vmax':probe_max} if name=='conv1' or name.startswith('Isolated') else {}
+        ax.imshow(v[0,0].numpy(),cmap='viridis',**scale);ax.set_title(name);ax.axis('off')
+    report={'image_id':int(ids[index]),'target':int(y[index]),'prediction':int(scores.argmax(1)),'patch_response':float(value),'predicted_spatial_size':int(predicted),'actual_stride_shape':list(actual.shape),'tiny_trace':trace,'vgg_partial_trace':vtrace,'vgg_full_trace':json.loads((ASSETS/'vgg16-full-shape-trace.json').read_text(encoding='utf-8')),'note':'The isolated stride probe and fixed conv1 panel share a color scale. The full pretrained trace keeps its original stride; only the isolated probe changes stride. VGG digit preview is out of ImageNet domain; first two blocks only.'}
     return report,fig
 
 def train_candidate(config,epochs=24):
@@ -136,12 +140,24 @@ def adapt(head_classes,trainable_groups,epochs=35):
     opt=torch.optim.SGD(parameter_groups)
     for epoch in range(12):
         fine.train();opt.zero_grad();loss=nn.functional.cross_entropy(fine(x[tr]),target[tr]);loss.backward();opt.step()
-    fine.eval();rows=[]
+    fine.eval();rows=[];predictions_by_route={}
     for name,model in [('Frozen features',frozen),('Last-block fine-tune',fine)]:
         with torch.no_grad():logits=model(x[va]);pred=logits.argmax(1)
+        predictions_by_route[name]=pred.tolist()
         rows.append({'route':name,'trainable_parameters':sum(p.numel() for p in model.parameters() if p.requires_grad),'validation_loss':float(nn.functional.cross_entropy(logits,target[va])),'validation_accuracy':float((pred==target[va]).float().mean())})
     deltas={n:float((p-before[n]).detach().abs().max()) for n,p in fine.named_parameters()}
-    return {'routes':rows,'fine_tune_max_absolute_delta':deltas,'trainable_names':[n for n,p in fine.named_parameters() if p.requires_grad],'source_target_disjoint':True,'source_task':'10-class digits','target_task':'even/odd','validation_predictions':pred.tolist(),'validation_targets':target[va].tolist(),'validation_ids':[int(i) for i in ids[va]],'budgets':{'head_epochs':epochs,'fine_tune_epochs':12},'seed':42}
+    return {'routes':rows,'fine_tune_max_absolute_delta':deltas,'trainable_names':[n for n,p in fine.named_parameters() if p.requires_grad],'source_target_disjoint':True,'source_task':'10-class digits','target_task':'even/odd','validation_predictions':pred.tolist(),'validation_predictions_by_route':predictions_by_route,'validation_comparison':[{'image_id':int(ids[i]),'target':int(target[i]),'head_only':predictions_by_route['Frozen features'][j],'last_block':predictions_by_route['Last-block fine-tune'][j],'changed':predictions_by_route['Frozen features'][j]!=predictions_by_route['Last-block fine-tune'][j]} for j,i in enumerate(va)],'validation_targets':target[va].tolist(),'validation_ids':[int(i) for i in ids[va]],'budgets':{'head_epochs':epochs,'fine_tune_epochs':12},'seed':42}
+
+def adaptation_figure(report):
+    """Show measured route decisions on the exact held-out images, changed cases first."""
+    import matplotlib.pyplot as plt
+    x,_,ids,*_=target_data();positions={int(image_id):i for i,image_id in enumerate(ids)}
+    rows=sorted(report['validation_comparison'],key=lambda row:not row['changed'])[:8]
+    fig,axes=plt.subplots(2,4,figsize=(10,6),layout='constrained')
+    for ax,row in zip(axes.flat,rows):
+        ax.imshow(x[positions[row['image_id']],0],cmap='gray',vmin=0,vmax=1)
+        ax.set_title(f"id {row['image_id']} · target {row['target']}\nhead {row['head_only']} → last {row['last_block']}",fontsize=9);ax.axis('off')
+    return fig
 
 def ae_inputs(index,k,noise):
     x,y,ids,tr,va,te=target_data();clean=x[index:index+1].flatten(1)
@@ -164,9 +180,10 @@ def ae_compare(reconstruct,error,index,k,noise):
             if err is None:return None
             if not np.isscalar(err) or not np.isfinite(err) or err<0:raise ValueError('MSE must be one finite nonnegative scalar.')
             outputs[mode]=(output, float(err))
-    fig,axes=plt.subplots(1,4,figsize=(10,3),layout='constrained')
-    panels=[('Clean target',clean),('Noisy input',noisy)]+[(mode+' reconstruction',result[0]) for mode,result in outputs.items()]
-    for ax,(title,image) in zip(axes,panels):ax.imshow(image.reshape(8,8),cmap='gray',vmin=0,vmax=1);ax.set_title(title,fontsize=9);ax.axis('off')
+    fig,axes=plt.subplots(2,3,figsize=(10,6),layout='constrained')
+    panels=[('Clean target',clean),('Noisy input',noisy)]+[(mode+' reconstruction',result[0]) for mode,result in outputs.items()]+[(mode+' squared error',(clean-result[0]).square()) for mode,result in outputs.items()]
+    for ax,(title,image) in zip(axes.flat,panels):
+        ax.imshow(image.reshape(8,8),cmap='magma' if 'error' in title else 'gray',vmin=0,vmax=1);ax.set_title(title,fontsize=9);ax.axis('off')
     report={'image_id':image_id,'latent_width':k,'coordinate_ratio':64/k,'noise_std':noise,'seed':42,'clean_target_mse':{mode:v[1] for mode,v in outputs.items()},'noisy_input_mse':float(nn.functional.mse_loss(noisy,clean)),'units':'normalized intensity squared','note':'latent-only coordinate ratio; not codec bitrate. Changing noise does not train the model.'}
     return report,fig
 

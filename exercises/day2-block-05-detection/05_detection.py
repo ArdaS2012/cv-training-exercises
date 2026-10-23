@@ -18,19 +18,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Detector audit: find what the threshold cannot fix
 
-    **15 minutes in pairs after guided setup.** Distinguish model predictions, confidence selection and geometric overlap in an evidence-based detector comparison.
+    **30 minutes in pairs.** Detectors return boxes, labels and scores. IoU measures geometry, not class correctness. Confidence filters predictions; NMS suppresses overlap. Filtering cannot create a missing box.
 
-    1. Predict a match/miss. Complete both TODOs, manually check IoU for one pair of supplied boxes and verify equality at the confidence cutoff.
+    ### Investigate, do not just run
 
-    2. Run YOLO and SSD on the bus image at confidence 0.5. Change only confidence to 0.7 with NMS fixed; compare retained boxes and one reference match.
+    1. On the bus photograph, mark one object you expect to survive confidence 0.5→0.7. Predict whether its geometry will change or only its retention.
 
-    3. Identify one miss, duplicate or incorrect box and propose a follow-up test. Explain why filtering cannot recover an object absent from raw predictions and why this photograph cannot rank detector families universally.
+    2. Complete confidence selection and continuous-coordinate IoU TODOs. Hand-check one supplied box pair, a disjoint pair and equality at the score cutoff. Then run the actual CPU detectors.
 
-    **Bring back:** Annotated outputs, checked IoU/cutoff case, threshold comparison and one diagnosed detection limit.
+    3. Hold image, model outputs and NMS fixed; compare confidence 0.5 versus 0.7 for YOLO and SSD. Record boxes kept, one reference IoU and a concrete miss/duplicate; label live inference or measured fallback honestly.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Swap roles. Restore confidence 0.5, change ONLY NMS overlap cutoff, and inspect one overlapping pair. Explain the difference from your confidence experiment. If counts stay fixed, use the displayed scores/overlaps to explain why.
+
+    5. Recommend settings for retaining the chosen object without a duplicate. Identify a remaining bad box or absent object that filtering cannot repair. Use the second photograph only as a bounded generalization check, not a universal model ranking.
+
+    **Evidence log:** image | detector/mode | confidence | NMS | kept boxes | reference IoU / visible error. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -40,7 +46,7 @@ def _(mo):
     mo.md("""
     # Compare Detector Outputs
 
-    15-minute group task after guided setup. Run two real pretrained CPU detectors on shared images; inspect confidence filtering, IoU, reference matches and a missed or duplicate object.
+    30-minute investigation after guided setup. Run two real pretrained CPU detectors on shared images; inspect confidence filtering, IoU, reference matches and a missed or duplicate object.
 
     Predict → complete the short TODOs → change one control → inspect → explain → download.
 
@@ -58,6 +64,17 @@ def _(mo):
     prediction=mo.ui.text_area(label='Predict a match, miss or duplicate as thresholds change',full_width=True)
     mo.vstack([mo.hstack([image_id,cutoff,overlap_cutoff],wrap=True),prediction,run_detectors])
     return cutoff, image_id, overlap_cutoff, prediction, run_detectors
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Read a detection, not just its score
+    Each record contains a class label, score and rectangle $[x_1,y_1,x_2,y_2]$ in original-image pixels. Continuous-coordinate area is $(x_2-x_1)(y_2-y_1)$; intersecting widths/heights are clipped at zero. IoU is intersection area divided by union area. It measures geometric overlap, independently of whether the class is right.
+
+    Confidence selection keeps scores at least the cutoff. Class-aware NMS suppresses a lower-scoring same-class rectangle when its IoU with a retained rectangle exceeds the NMS cutoff. Test these controls separately. Neither edits a retained box's geometry nor creates a prediction absent from the decoded candidates. Dashed reference boxes are teaching annotations; the two photographs are not a benchmark.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -128,6 +145,19 @@ def _(detection_result, mo):
         _buffer=io.BytesIO();_figure.savefig(_buffer,format='png',dpi=150,bbox_inches='tight')
         _view=mo.vstack([_figure,mo.download(_buffer.getvalue(),filename='comparison.png',label='Download figure'),mo.md('```json\n'+__import__('json').dumps(_report,indent=2)+'\n```')])
     _view
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="image | detector/mode | confidence | NMS | kept boxes | reference IoU / visible error\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"image | detector/mode | confidence | NMS | kept boxes | reference IoU / visible error"},'day2-block5-comparison-log',label='Download comparison log (baseline + changed runs)')
     return
 
 

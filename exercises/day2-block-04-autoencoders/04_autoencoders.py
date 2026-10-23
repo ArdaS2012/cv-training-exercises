@@ -18,19 +18,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Restoration lab: cleaner pixels or lost detail?
 
-    **15 minutes in pairs after guided setup.** Assess reconstruction quantitatively and visually while distinguishing capacity from objective.
+    **30 minutes in pairs.** Encoder → latent code → decoder reconstructs pixels. MSE averages squared errors in matching units. Denoising uses a clean target. Low average error can hide a lost stroke; checkpoint comparisons are descriptive.
 
-    1. Predict detail retention. Complete the two TODOs and check the averaging convention for per-pixel mean squared error.
+    ### Investigate, do not just run
 
-    2. At identical image/noise/seed, compare latent widths 4 and 16. For one width compare clean-trained and denoising-trained outputs; record errors and point to one preserved or lost detail.
+    1. At row 0 and noise 0.25, choose a visible stroke/edge you want to preserve. Predict what changing latent width 4→16 will do to that detail and clean-target error.
 
-    3. Defend a checkpoint choice for denoising, including one case where low pixel error would still be inadequate. Explain which comparisons change width versus training objective.
+    2. Complete encode/decode and pixel-MSE TODOs. Check the averaging convention with a tiny hand example; inspect clean input, noisy image, reconstruction and error map together.
 
-    **Bring back:** Fixed-input reconstruction/error comparison, marked lost detail and a qualified checkpoint decision.
+    3. Compare latent widths 4 and 16 with the SAME row/noise. Record MSE and annotate the chosen detail in each output; compare both clean-reconstruction and denoising checkpoints shown by the notebook.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Swap roles, freeze width, and change only noise (0.25→0.45). Inspect whether smoothing removes noise and useful detail together. Use a second digit only after saving this fixed-image comparison.
+
+    5. Choose a checkpoint for preserving the selected detail under noise. Defend with both measured error and visible evidence, including any disagreement. Explain why different training histories prevent a pure causal claim about latent width.
+
+    **Evidence log:** row | noise | width/objective | clean-target MSE | preserved/lost detail. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -40,7 +46,7 @@ def _(mo):
     mo.md("""
     # Inspect Compression and Denoising
 
-    15-minute group task after guided setup. Compare genuine autoencoder checkpoints at two bottleneck widths, fixed-noise reconstructions, per-pixel errors and lost detail.
+    30-minute investigation after guided setup. Compare genuine autoencoder checkpoints at two bottleneck widths, fixed-noise reconstructions, per-pixel errors and lost detail.
 
     Predict → complete the short TODOs → change one control → inspect → explain → download.
 
@@ -57,6 +63,17 @@ def _(mo):
     prediction=mo.ui.text_area(label='Predict detail preservation and denoising error',full_width=True)
     mo.vstack([mo.hstack([image_row,latent,noise],wrap=True),prediction])
     return image_row, latent, noise, prediction
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Read the restoration panel
+    The encoder makes code $z=f(x)$; the decoder reconstructs $\hat x=g(z)$. The latent width is the number of code coordinates, not the number of classes. Per-pixel MSE is $\frac1d\sum_{j=1}^d(x_j-\hat x_j)^2$, where $d$ is the number of compared pixels in the same intensity convention. Compare against the clean target even when the input is noisy.
+
+    Averaging can hide a small lost stroke because many easy background pixels dominate the score. Locate your chosen detail before reading MSE; then use both sources of evidence. Changing noise with the same image and checkpoint isolates input difficulty. Width comparisons use separately trained checkpoints, so their histories prevent a pure width-only causal conclusion.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -107,6 +124,19 @@ def _(ae_result, mo):
         _buffer=io.BytesIO();_figure.savefig(_buffer,format='png',dpi=150,bbox_inches='tight')
         _view=mo.vstack([_figure,mo.download(_buffer.getvalue(),filename='comparison.png',label='Download figure'),mo.md('```json\n'+__import__('json').dumps(_report,indent=2)+'\n```')])
     _view
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="row | noise | width/objective | clean-target MSE | preserved/lost detail\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"row | noise | width/objective | clean-target MSE | preserved/lost detail"},'day2-block4-comparison-log',label='Download comparison log (baseline + changed runs)')
     return
 
 

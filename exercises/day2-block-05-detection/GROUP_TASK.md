@@ -1,8 +1,12 @@
-# Exercise: audit detector filtering
+# Detector audit: find what the threshold cannot fix
 
-**Exercise + breakout · CV Day 2 Block 5 · 15 minutes in pairs**
+**Exercise + breakout · CV Day 2 Block 5 · 30 minutes in pairs**
 
-Learning goal: Distinguish model predictions, confidence selection and geometric overlap in an evidence-based detector comparison.
+Your job is to produce a defensible decision from the actual outputs, including a result that challenges your first guess. One partner edits; the other checks controls, arithmetic and visual evidence. Swap at minute 15.
+
+## Keep these slide takeaways beside your experiment
+
+Detectors return boxes, labels and scores. IoU measures geometry, not class correctness. Confidence filters predictions; NMS suppresses overlap. Filtering cannot create a missing box.
 
 ## Before the room opens
 
@@ -10,20 +14,26 @@ Preload both detector checkpoints, run one warm-up image and show reference xyxy
 
 Use the [shared setup](../../README.md); model downloads and launch checks happen before the task. Start from the repository root with `uv run --locked python start.py --day 2 --block 5`. Keep the starter open. Prerequisite TODOs discussed in plenary belong to setup; the task below is the room assignment.
 
-## Your group task
+## Your investigation
 
-1. Predict a match/miss. Complete both TODOs, manually check IoU for one pair of supplied boxes and verify equality at the confidence cutoff.
+1. On the bus photograph, mark one object you expect to survive confidence 0.5→0.7. Predict whether its geometry will change or only its retention.
 
-2. Run YOLO and SSD on the bus image at confidence 0.5. Change only confidence to 0.7 with NMS fixed; compare retained boxes and one reference match.
+2. Complete confidence selection and continuous-coordinate IoU TODOs. Hand-check one supplied box pair, a disjoint pair and equality at the score cutoff. Then run the actual CPU detectors.
 
-3. Identify one miss, duplicate or incorrect box and propose a follow-up test. Explain why filtering cannot recover an object absent from raw predictions and why this photograph cannot rank detector families universally.
+3. Hold image, model outputs and NMS fixed; compare confidence 0.5 versus 0.7 for YOLO and SSD. Record boxes kept, one reference IoU and a concrete miss/duplicate; label live inference or measured fallback honestly.
 
-## Bring back
+4. Swap roles. Restore confidence 0.5, change ONLY NMS overlap cutoff, and inspect one overlapping pair. Explain the difference from your confidence experiment. If counts stay fixed, use the displayed scores/overlaps to explain why.
 
-Annotated outputs, checked IoU/cutoff case, threshold comparison and one diagnosed detection limit.
+5. Recommend settings for retaining the chosen object without a duplicate. Identify a remaining bad box or absent object that filtering cannot repair. Use the second photograph only as a bounded generalization check, not a universal model ranking.
 
-Use the notebook’s prediction/observation fields. Save the Python source and download findings to retain browser inputs and measurements. Both partners should be able to explain the conclusion; swap editor/checker around halfway. If you finish early, state a competing explanation and a new controlled test that would distinguish it.
+## Evidence to bring back
+
+Keep a short comparison log with columns **image | detector/mode | confidence | NMS | kept boxes | reference IoU / visible error**. Save run A before changing settings: the notebook’s current report is replaced when controls rerun. Download each comparison figure/report plus the experiment log. Save the Python source separately; browser inputs are not saved in it.
+
+Bring one prediction, measured comparison, marked visual example or traced response, a decision and one limitation. Both partners must explain why the evidence supports it.
 
 ## Work within the timebox
 
-2 minutes to predict and agree; 7 to implement and compare; 4 to diagnose and defend; 2 to record/export. Ask for help through the trainer’s chat/room-visit route if blocked. Return to plenary for review and the scheduled quiz. Honest unchanged or failed results count as evidence when they are explained; do not invent measurements.
+0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
+
+If blocked, ask through the trainer’s chat/room-visit route. Use the working partner’s device if needed. Honest unchanged or worse outputs count when explained; label a supplied measured fallback instead of claiming fresh inference.

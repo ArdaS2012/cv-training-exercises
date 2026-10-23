@@ -3,9 +3,9 @@
 
 ## Exercise + breakout
 
-Follow the [15-minute group task](GROUP_TASK.md) after guided setup.
+Follow the [30-minute group task](GROUP_TASK.md) after guided setup.
 
-CV Day 3 Block 2 · guided setup, then a 15-minute exercise + breakout.
+CV Day 3 Block 2 · guided setup, then a 30-minute exercise + breakout.
 
 Use a supplied trained Siamese encoder, held-out pairs and margin convention y=1 for similar; no training from scratch.
 
@@ -29,3 +29,7 @@ The checkpoint is a shared encoder on held-out pairs. Keep the pairs and embeddi
 ## Current teaching handoff
 
 CV Day 3, Block 2: actual slide **24 — Exercise: defend a match threshold** launches the combined exercise + breakout. Return to plenary at the agenda’s room end. The notebook and group task are self-contained; private trainer files are not required.
+
+## Investigation focus
+
+Match desk: which mistake costs more?. Both branches share encoder weights. Distance compares embeddings; a decision threshold does not retrain them. Here y=1 means similar. A wider acceptance threshold trades missed matches for false matches. Keep the task beside the output, preserve run A in the comparison log, and compare a controlled change before making your decision.

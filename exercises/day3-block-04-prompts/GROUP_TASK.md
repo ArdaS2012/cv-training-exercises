@@ -1,8 +1,12 @@
-# Exercise: isolate a vision prompt
+# Prompt repair: words and points do different jobs
 
-**Exercise + breakout · CV Day 3 Block 4 · 15 minutes in pairs**
+**Exercise + breakout · CV Day 3 Block 4 · 30 minutes in pairs**
 
-Learning goal: Match text versus geometric prompt design to the actual model’s input/output contract.
+Your job is to produce a defensible decision from the actual outputs, including a result that challenges your first guess. One partner edits; the other checks controls, arithmetic and visual evidence. Swap at minute 15.
+
+## Keep these slide takeaways beside your experiment
+
+CLIP compares an image with text candidates; normalized scores depend on that set. SAM accepts spatial prompts and returns masks. Prompt edits change inference inputs, not weights.
 
 ## Before the room opens
 
@@ -10,20 +14,26 @@ Preload official pinned checkpoints and matching cached image encodings. Warm bo
 
 Use the [shared setup](../../README.md); model downloads and launch checks happen before the task. Start from the repository root with `uv run --locked python start.py --day 3 --block 4`. Keep the starter open. Prerequisite TODOs discussed in plenary belong to setup; the task below is the room assignment.
 
-## Your group task
+## Your investigation
 
-1. Predict which route can isolate the person near x280,y650. Complete candidate and spatial-prompt TODOs for the bus image, using parallel text descriptions and valid original-image geometry.
+1. Use the bus image throughout the core comparison. Predict why the supplied point-on-bus baseline misses the intended person near x280,y650, and which model can return that person’s pixels.
 
-2. Run both actual models and compare your prompt with the supplied baseline. Change one text description or one spatial prompt item only, with image and revisions fixed; preserve scores and masks.
+2. Complete comparable text candidates and a valid original-pixel spatial prompt. Run both real models, inspect baseline scores and mask, and save the baseline before editing.
 
-3. Explain one failed or ambiguous result and propose the next single-variable test. Distinguish relative CLIP candidate scores from semantic correctness and SAM’s spatial mask from a text label.
+3. Freeze the spatial prompt. Change ONE text description in otherwise identical parallel candidates, rerun and compare scores/ranking. Explain what changed in the denominator and what that cannot prove about semantic correctness.
 
-## Bring back
+4. Swap roles. Restore the text candidates, change only ONE spatial prompt item (point, exclusion or box) and compare masks on the fixed image/revisions. Mark included/excluded pixels around the intended person and diagnose a failure.
 
-Baseline/changed text scores and spatial masks, fixed-settings record and an interface-based failure explanation.
+5. Recommend a prompt for the stated output, citing score and mask evidence separately. Propose one next controlled test; explain why a text label and a spatial mask are different outputs and neither comparison trains weights.
 
-Use the notebook’s prediction/observation fields. Save the Python source and download findings to retain browser inputs and measurements. Both partners should be able to explain the conclusion; swap editor/checker around halfway. If you finish early, state a competing explanation and a new controlled test that would distinguish it.
+## Evidence to bring back
+
+Keep a short comparison log with columns **run | text item changed | spatial item changed | score/rank evidence | mask inclusion/exclusion**. Save run A before changing settings: the notebook’s current report is replaced when controls rerun. Download each comparison figure/report plus the experiment log. Save the Python source separately; browser inputs are not saved in it.
+
+Bring one prediction, measured comparison, marked visual example or traced response, a decision and one limitation. Both partners must explain why the evidence supports it.
 
 ## Work within the timebox
 
-2 minutes to predict and agree; 7 to implement and compare; 4 to diagnose and defend; 2 to record/export. Ask for help through the trainer’s chat/room-visit route if blocked. Return to plenary for review and the scheduled quiz. Honest unchanged or failed results count as evidence when they are explained; do not invent measurements.
+0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
+
+If blocked, ask through the trainer’s chat/room-visit route. Use the working partner’s device if needed. Honest unchanged or worse outputs count when explained; label a supplied measured fallback instead of claiming fresh inference.

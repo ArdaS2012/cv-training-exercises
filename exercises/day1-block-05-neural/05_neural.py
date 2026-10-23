@@ -13,25 +13,29 @@ def _():
     import numpy as np
     from cv_exercises import data, display
 
-    return display, mo
+    return data, display, mo, np
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Hands-on investigation: your shared mission
 
-    **15 minutes in pairs after guided setup.** Separate evidence of fitting from evidence of generalization using a controlled training experiment.
+    **30 minutes in pairs.** Audit a learning claim: did gradient updates improve this classifier, and what do the images actually show?
 
-    1. Predict training loss and validation behavior. Complete the two TODOs and manually check one negative-log target loss.
+    ### Prior-slide takeaways to use now
 
-    2. At learning rate 0.5 compare 0 versus 80 updates with the same initialization/data. Record loss and a held-out prediction from both runs.
+    Slides 57–63: ReLU supplies nonlinearity; cross-entropy scores the target probability. Updates use training rows; validation informs choices and the test stays untouched.
 
-    3. Repeat 80 updates changing only rate to 2.0. Accept the actual result even if it worsens. Defend which evidence shows learning and which further evidence would be needed for generalization.
+    1. Predict the learning curves and manually check one target-probability loss. Implement ReLU and mean cross-entropy; trace one negative activation and one target probability. Keep the supplied matching derivatives and fixed split unchanged.
 
-    **Bring back:** Loss curve, zero-update/baseline/rate comparison, held-out prediction and a qualified learning conclusion.
+    2. At rate 0.5 compare 0 and 80 updates from the same initialization. Log final training loss, validation accuracy and the same held-out image ID/prediction; inspect its actual pixels. Swap roles at minute 15 and explain one changed or unchanged prediction.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    3. Repeat 80 updates changing only rate to 2.0. Compare the curves and held-out image; accept deterioration as evidence. Recommend a next training experiment and name a population/condition your current validation cannot establish.
+
+    **Bring back:** Three controlled run rows and curves, one inspected held-out image, an explained learning claim and a next-test limitation.
+
+    **Route:** 0–4 predict; 4–12 implement and trace; 12–22 compare (swap roles at 15); 22–27 challenge and decide; 27–30 explain, save and export. Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
     """)
     return
 
@@ -41,9 +45,9 @@ def _(mo):
     mo.md("""
     # Train a Tiny Neural Classifier
 
-    15-minute group task after guided setup. Complete a nonlinear activation and classification loss in a supplied two-layer model. Compare loss before and after real CPU gradient updates. Inspect held-out validation predictions; explain why low training loss alone does not demonstrate generalization. The final test set stays untouched.
+    30-minute investigation after guided setup. Complete a nonlinear activation and classification loss in a supplied two-layer model. Compare loss before and after real CPU gradient updates. Inspect held-out validation predictions; explain why low training loss alone does not demonstrate generalization. The final test set stays untouched.
 
-    Predict → complete the short TODOs → change one control → explain → download findings.
+    Inspect → predict → implement and trace → compare → challenge → explain and download evidence.
 
     Use the cell code control to open TODO cells. Edit only `# TODO` areas and run with Shift+Enter. Waiting messages are normal before completion. Save Python with Ctrl+S / Command+S; widget values need the findings download. Work in pairs and swap who edits.
     """)
@@ -55,9 +59,10 @@ def _(mo):
     steps=mo.ui.slider(0,160,step=20,value=80,label='Gradient steps')
     learning_rate=mo.ui.dropdown(options=[0.05,0.2,0.5,2.0],value=0.5,label='Learning rate')
     run_training=mo.ui.run_button(label='Train on CPU')
+    example_index=mo.ui.slider(0,59,value=0,label='Validation image row — keep fixed across runs')
     prediction=mo.ui.text_area(label='Prediction: what should happen to training loss and validation accuracy?',full_width=True)
-    mo.hstack([steps,learning_rate,run_training],wrap=True)
-    return learning_rate, prediction, run_training, steps
+    mo.hstack([steps,learning_rate,run_training,example_index],wrap=True)
+    return example_index, learning_rate, prediction, run_training, steps
 
 
 @app.cell(hide_code=True)
@@ -99,29 +104,36 @@ def _(activation, learning_rate, mean_loss, mo, run_training, steps):
 
 
 @app.cell(hide_code=True)
-def _(mo, report):
+def _(data, example_index, mo, np, report):
     _view = None
     import matplotlib.pyplot as plt
     if report is not None:
-        figure,axes=plt.subplots(1,2,figsize=(10,3),layout='constrained')
+        figure,axes=plt.subplots(1,3,figsize=(12,3),layout='constrained')
         axes[0].plot(report['loss']); axes[0].set(title='Training cross-entropy',xlabel='gradient steps',ylabel='natural-log units')
         axes[1].plot(report['validation_accuracy']); axes[1].set(title='Validation accuracy',xlabel='gradient steps',ylabel='fraction correct',ylim=(0,1))
+        _x,_y,_ids=data.images()
+        _pick=example_index.value
+        _image_id=report['validation_ids'][_pick]
+        _source=int(np.flatnonzero(_ids==_image_id)[0])
+        axes[2].imshow(_x[_source].reshape(8,8),cmap='gray',vmin=0,vmax=1)
+        axes[2].set_title(f"Held-out ID {_image_id}\nPrediction {report['predictions'][_pick]} / target {report['targets'][_pick]}")
+        axes[2].axis('off')
         rows=[{'image_id':i,'target':y,'prediction':p} for i,y,p in zip(report['validation_ids'],report['targets'],report['predictions'])]
-        _view = mo.vstack([figure,mo.ui.table(rows),mo.md('180 train / 60 validation / 60 untouched test. Seed 42. This tiny local experiment is not a production-quality or CNN benchmark.')])
+        _view = mo.vstack([mo.md(f"**Current run:** {report['steps']} updates; rate {report['rate']}; final loss {report['loss'][-1]:.6f}; validation accuracy {report['validation_accuracy'][-1]:.3f}. Record these before rerunning."),figure,mo.ui.table(rows),mo.md('180 train / 60 validation / 60 untouched test. Seed 42. This tiny local experiment is not a production-quality or CNN benchmark.')])
     _view
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    observations=mo.ui.text_area(label='Findings: loss before/after; held-out prediction; training versus inference; one generalization limit',full_width=True)
+    observations=mo.ui.text_area(value='Updates | rate | final train loss | validation accuracy | fixed image ID | prediction/target\n0 | 0.5 | | | |\n80 | 0.5 | | | |\n80 | 2.0 | | | |\nOne visible image feature and changed/unchanged prediction:\nWhat supports the learning claim?\nNext controlled experiment and generalization limit:',label="Evidence log — keep every trial, mechanism and decision",full_width=True)
     observations
     return (observations,)
 
 
 @app.cell(hide_code=True)
-def _(display, learning_rate, mo, observations, prediction, report, steps):
-    display.download(mo,observations.value,{'prediction':prediction.value,'steps':steps.value,'rate':learning_rate.value,'report':report},'neural-findings')
+def _(display, example_index, learning_rate, mo, observations, prediction, report, steps):
+    display.download(mo,observations.value,{'validation_row':example_index.value,'prediction':prediction.value,'steps':steps.value,'rate':learning_rate.value,'report':report},'neural-findings')
     return
 
 

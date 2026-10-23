@@ -2,11 +2,11 @@
 
 ## Exercise + breakout
 
-Every supplied training exercise runs as a 15-minute pair task in breakout rooms after guided setup. Each block folder has a `GROUP_TASK.md` with the comparison, shared output and timebox; the same task is visible at the top of its notebook. Alternate editor/checker roles and bring evidence back to plenary. Blocks with no notebook exercise have no separate breakout task.
+Every supplied training exercise runs as a 30-minute pair investigation in breakout rooms after guided setup. Each block folder has a `GROUP_TASK.md` with the comparison, shared output and timebox; the same task is visible at the top of its notebook. Keep the preceding slide takeaways beside the task. Predict, implement a small step, explore a controlled change and use the measured evidence to make a decision. Swap editor/checker at minute 15 and bring both the finding and a limitation back to plenary. Blocks with no notebook exercise have no separate breakout task.
 
 Day 1 contains four prepared marimo notebooks: clustering, dimensionality reduction, pixel segmentation and a tiny neural classifier. You need programming familiarity, but no GPU, API key or paid service. Day 1 needs no model downloads. Day 2 adds five practices: CNN/VGG inspection, controlled model improvement, transfer/fine-tuning, autoencoders and detection. Small pretrained teaching assets are bundled. The detection practice uses genuine YOLO11n and SSDLite320 pretrained models; its online preflight downloads their official weights into the local ignored cache. No GPU is required.
 
-[Choose a practice](exercises/README.md). Each scheduled exercise includes a 15-minute pair task in breakout rooms, after guided preparation. Swap editor/checker roles halfway. Complete the short TODOs, compare one controlled change, then bring a prediction, measured result and limitation to plenary. The same task stays available in the notebook and its `GROUP_TASK.md`.
+[Choose a practice](exercises/README.md). Each scheduled exercise includes a 30-minute pair investigation in breakout rooms, after guided preparation. Swap editor/checker roles halfway. Complete the short TODOs, compare one controlled change, then bring a prediction, measured result and limitation to plenary. The same task stays available in the notebook and its `GROUP_TASK.md`.
 
 ## Get the workspace
 

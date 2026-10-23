@@ -18,19 +18,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Convolution detective: where did the pixels go?
 
-    **15 minutes in pairs after guided setup.** Trace a numerical convolution and distinguish architecture geometry from semantic interpretation.
+    **30 minutes in pairs.** A response is a weighted sum plus bias. Stride changes sampling, not learned weights. ReLU clips negatives; pooling loses positions. Feature channels are not class labels.
 
-    1. Predict a filter response and stride-1 output shape. Complete both TODOs and check one patch response by hand, including the bias.
+    ### Investigate, do not just run
 
-    2. Keep image, kernel and padding fixed; compare stride 1 and 2. Verify the predicted shape against the computed map and explain what spatial sampling changed.
+    1. Predict one patch response, including bias, and the stride-1/stride-2 shapes before running. Mark a thin stroke in fixed digit row 0 that could become harder to locate.
 
-    3. Compare one tiny-CNN stage with the supplied pretrained VGG trace. Identify channel/spatial changes and explain why an activation is not proof of a named object.
+    2. Complete the response and output-size TODOs. Check one patch by hand, then inspect the actual learned maps. Explain the first disagreement between your prediction and the measured trace.
 
-    **Bring back:** Checked response, predicted/measured shape table, fixed-stride comparison and a feature-interpretation caveat.
+    3. Keep image, kernel and padding fixed. Run stride 1 then 2; record predicted/measured dimensions and point to a visible change in spatial detail. Swap editor/checker and explain which operation caused it.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Keep stride fixed and choose one different digit row. Test whether the same channel lights up in the same place. Compare the supplied VGG trace: name one channel/spatial change, without assigning a human object name to a channel.
+
+    5. Decide which sampling setting you would start with if preserving a small stroke mattered. Support it with one shape measurement and one marked visual feature; state why these two digits cannot establish classifier accuracy.
+
+    **Evidence log:** row | stride | predicted H×W | measured H×W | map/stroke evidence. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -40,7 +46,7 @@ def _(mo):
     mo.md("""
     # Inspect a Small CNN and VGG
 
-    15-minute group task after guided setup. Calculate a filter response and shape, inspect actual learned feature maps, and compare tiny-CNN versus VGG feature traces.
+    30-minute investigation after guided setup. Calculate a filter response and shape, inspect actual learned feature maps, and compare tiny-CNN versus VGG feature traces.
 
     Predict → complete the short TODOs → change one control → inspect → explain → download.
 
@@ -56,6 +62,17 @@ def _(mo):
     prediction=mo.ui.text_area(label='Predict the output shape and a ReLU/pooling change',full_width=True)
     mo.vstack([mo.hstack([image_index,stride],wrap=True),prediction])
     return image_index, prediction, stride
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Read the maps like an investigator
+    A convolution multiplies aligned image/kernel entries, adds them and adds one bias: $y=\sum_i x_i k_i+b$. Inputs have matching shape; the output is one scalar response, not a probability. For one spatial axis, $H'=\lfloor(H+2P-K)/S\rfloor+1$: $H$ is input size, $P$ zero padding per side, $K$ kernel size and $S$ stride. Floor keeps only complete windows. Width follows the same rule.
+
+    ReLU keeps the shape and replaces negative responses with zero. Pooling summarizes local windows and can remove a narrow stroke. Compare the SAME channel and color scale before naming a change; bright means a larger response, not that a known object has been detected. Use the labelled isolated stride probe: it and the fixed conv1 panel share a color scale. The full pretrained network trace retains its original stride. Changing the probe changes sampling geometry; it does not retrain the tiny model or VGG.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -106,6 +123,19 @@ def _(cnn_result, mo):
         _buffer=io.BytesIO();_figure.savefig(_buffer,format='png',dpi=150,bbox_inches='tight')
         _view=mo.vstack([_figure,mo.download(_buffer.getvalue(),filename='comparison.png',label='Download figure'),mo.md('```json\n'+__import__('json').dumps(_report,indent=2)+'\n```')])
     _view
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="row | stride | predicted H\u00d7W | measured H\u00d7W | map/stroke evidence\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"row | stride | predicted H\u00d7W | measured H\u00d7W | map/stroke evidence"},'day2-block1-comparison-log',label='Download comparison log (baseline + changed runs)')
     return
 
 

@@ -1,8 +1,12 @@
-# Exercise: defend a match threshold
+# Match desk: which mistake costs more?
 
-**Exercise + breakout · CV Day 3 Block 2 · 15 minutes in pairs**
+**Exercise + breakout · CV Day 3 Block 2 · 30 minutes in pairs**
 
-Learning goal: Connect embedding distance, pair-loss convention and decision-cost tradeoffs.
+Your job is to produce a defensible decision from the actual outputs, including a result that challenges your first guess. One partner edits; the other checks controls, arithmetic and visual evidence. Swap at minute 15.
+
+## Keep these slide takeaways beside your experiment
+
+Both branches share encoder weights. Distance compares embeddings; a decision threshold does not retrain them. Here y=1 means similar. A wider acceptance threshold trades missed matches for false matches.
 
 ## Before the room opens
 
@@ -10,20 +14,26 @@ Preload the trained shared encoder and held-out pairs. Explain labels y=1 for si
 
 Use the [shared setup](../../README.md); model downloads and launch checks happen before the task. Start from the repository root with `uv run --locked python start.py --day 3 --block 2`. Keep the starter open. Prerequisite TODOs discussed in plenary belong to setup; the task below is the room assignment.
 
-## Your group task
+## Your investigation
 
-1. Predict which error type will grow with a higher threshold. Complete both TODOs and check one similar and one dissimilar pair loss with the stated label convention.
+1. Look at a similar and dissimilar image pair; predict their distance ordering and which error increases when the cutoff grows. State the y=1 convention before coding.
 
-2. Keep pairs/encoder/embeddings fixed. Compare thresholds 0.5 and 0.9, counting false matches and missed matches; identify a changed decision or explain why none crossed the cutoff.
+2. Complete per-pair Euclidean distance and contrastive-loss TODOs. Manually trace one similar and one dissimilar loss, including the margin case; inspect the actual pair images beside measured distances.
 
-3. Choose a threshold for a scenario where false matches are more costly. Justify it with observed errors and describe how you would validate it on new pairs without tuning on the test set.
+3. Freeze pairs/encoder/embeddings and compare cutoffs 0.5 and 0.9. Record false matches and missed matches; identify the pair whose decision changes, or explain why no distance crossed the cutoff.
 
-## Bring back
+4. Swap roles. Act as two clients: an access system that fears false matches, and a search tool that fears missed matches. Use the SAME error table to defend a different threshold for each; inspect one visual counterexample to your intuition.
 
-Checked pair losses, two-threshold error table, one explained pair and a conditional threshold decision.
+5. Choose one policy and explain its cost tradeoff with an actual pair. Specify how new validation pairs would set the threshold and untouched test pairs would estimate performance; do not tune repeatedly on these teaching pairs.
 
-Use the notebook’s prediction/observation fields. Save the Python source and download findings to retain browser inputs and measurements. Both partners should be able to explain the conclusion; swap editor/checker around halfway. If you finish early, state a competing explanation and a new controlled test that would distinguish it.
+## Evidence to bring back
+
+Keep a short comparison log with columns **cutoff | false matches | missed matches | changed pair | intended error cost**. Save run A before changing settings: the notebook’s current report is replaced when controls rerun. Download each comparison figure/report plus the experiment log. Save the Python source separately; browser inputs are not saved in it.
+
+Bring one prediction, measured comparison, marked visual example or traced response, a decision and one limitation. Both partners must explain why the evidence supports it.
 
 ## Work within the timebox
 
-2 minutes to predict and agree; 7 to implement and compare; 4 to diagnose and defend; 2 to record/export. Ask for help through the trainer’s chat/room-visit route if blocked. Return to plenary for review and the scheduled quiz. Honest unchanged or failed results count as evidence when they are explained; do not invent measurements.
+0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
+
+If blocked, ask through the trainer’s chat/room-visit route. Use the working partner’s device if needed. Honest unchanged or worse outputs count when explained; label a supplied measured fallback instead of claiming fresh inference.

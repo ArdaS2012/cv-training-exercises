@@ -15,7 +15,7 @@ Open the supplied `02_model_improvement.py` editor on localhost:2720. Run online
 
 ## Exercise + breakout
 
-Follow the [15-minute group task](GROUP_TASK.md) after guided setup. It defines the required comparison, evidence and shared result. Keep the technical help below for the bounded TODOs.
+Follow the [30-minute group task](GROUP_TASK.md) after guided setup. It defines the required comparison, evidence and shared result. Keep the technical help below for the bounded TODOs.
 
 ## Submit/share
 
@@ -27,8 +27,12 @@ Check exact tensor shape, coordinate convention and normalization in the noteboo
 
 ## Course mapping
 
-CV Day 2, Block 2, guided setup plus a 15-minute exercise + breakout. The private trainer guide is not needed for the task. Model/data provenance is bundled under `cv_exercises/assets/day2/`.
+CV Day 2, Block 2, guided setup plus a 30-minute exercise + breakout. The private trainer guide is not needed for the task. Model/data provenance is bundled under `cv_exercises/assets/day2/`.
 
 ## Current teaching handoff
 
 CV Day 2, Block 2: actual slide **32 — Exercise: test a training intervention** launches the combined exercise + breakout. Return to plenary at the agenda’s room end. The notebook and group task are self-contained; private trainer files are not required.
+
+## Investigation focus
+
+Training clinic: can you defend an improvement?. Parameters are learned; hyperparameters are chosen. Hold split, seed and budget fixed. Choose by validation loss; reserve test data until the decision is frozen. A lower training loss alone is insufficient. Keep the task beside the output, preserve run A in the comparison log, and compare a controlled change before making your decision.

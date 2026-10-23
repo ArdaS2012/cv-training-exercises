@@ -15,7 +15,7 @@ Open the supplied `04_autoencoders.py` editor on localhost:2720. Run online pref
 
 ## Exercise + breakout
 
-Follow the [15-minute group task](GROUP_TASK.md) after guided setup. It defines the required comparison, evidence and shared result. Keep the technical help below for the bounded TODOs.
+Follow the [30-minute group task](GROUP_TASK.md) after guided setup. It defines the required comparison, evidence and shared result. Keep the technical help below for the bounded TODOs.
 
 ## Submit/share
 
@@ -27,8 +27,12 @@ Check exact tensor shape, coordinate convention and normalization in the noteboo
 
 ## Course mapping
 
-CV Day 2, Block 4, guided setup plus a 15-minute exercise + breakout. The private trainer guide is not needed for the task. Model/data provenance is bundled under `cv_exercises/assets/day2/`.
+CV Day 2, Block 4, guided setup plus a 30-minute exercise + breakout. The private trainer guide is not needed for the task. Model/data provenance is bundled under `cv_exercises/assets/day2/`.
 
 ## Current teaching handoff
 
 CV Day 2, Block 4: actual slide **50 — Exercise: assess reconstruction quality** launches the combined exercise + breakout. Return to plenary at the agenda’s room end. The notebook and group task are self-contained; private trainer files are not required.
+
+## Investigation focus
+
+Restoration lab: cleaner pixels or lost detail?. Encoder → latent code → decoder reconstructs pixels. MSE averages squared errors in matching units. Denoising uses a clean target. Low average error can hide a lost stroke; checkpoint comparisons are descriptive. Keep the task beside the output, preserve run A in the comparison log, and compare a controlled change before making your decision.

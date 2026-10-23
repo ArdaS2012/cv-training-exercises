@@ -3,9 +3,9 @@
 
 ## Exercise + breakout
 
-Follow the [15-minute group task](GROUP_TASK.md) after guided setup.
+Follow the [30-minute group task](GROUP_TASK.md) after guided setup.
 
-CV Day 3 Block 4 · guided setup, then a 15-minute exercise + breakout.
+CV Day 3 Block 4 · guided setup, then a 30-minute exercise + breakout.
 
 Run actual CLIP text inference and SAM prompt decoding with official pinned checkpoints and cached matching image encodings.
 
@@ -29,3 +29,7 @@ CLIP scores normalize over the chosen text candidates. SAM receives original-ima
 ## Current teaching handoff
 
 CV Day 3, Block 4: actual slide **48 — Exercise: isolate a vision prompt** launches the combined exercise + breakout. Return to plenary at the agenda’s room end. The notebook and group task are self-contained; private trainer files are not required.
+
+## Investigation focus
+
+Prompt repair: words and points do different jobs. CLIP compares an image with text candidates; normalized scores depend on that set. SAM accepts spatial prompts and returns masks. Prompt edits change inference inputs, not weights. Keep the task beside the output, preserve run A in the comparison log, and compare a controlled change before making your decision.

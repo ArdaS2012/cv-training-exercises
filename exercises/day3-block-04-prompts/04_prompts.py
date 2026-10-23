@@ -20,19 +20,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Prompt repair: words and points do different jobs
 
-    **15 minutes in pairs after guided setup.** Match text versus geometric prompt design to the actual model’s input/output contract.
+    **30 minutes in pairs.** CLIP compares an image with text candidates; normalized scores depend on that set. SAM accepts spatial prompts and returns masks. Prompt edits change inference inputs, not weights.
 
-    1. Predict which route can isolate the person near x280,y650. Complete candidate and spatial-prompt TODOs for the bus image, using parallel text descriptions and valid original-image geometry.
+    ### Investigate, do not just run
 
-    2. Run both actual models and compare your prompt with the supplied baseline. Change one text description or one spatial prompt item only, with image and revisions fixed; preserve scores and masks.
+    1. Use the bus image throughout the core comparison. Predict why the supplied point-on-bus baseline misses the intended person near x280,y650, and which model can return that person’s pixels.
 
-    3. Explain one failed or ambiguous result and propose the next single-variable test. Distinguish relative CLIP candidate scores from semantic correctness and SAM’s spatial mask from a text label.
+    2. Complete comparable text candidates and a valid original-pixel spatial prompt. Run both real models, inspect baseline scores and mask, and save the baseline before editing.
 
-    **Bring back:** Baseline/changed text scores and spatial masks, fixed-settings record and an interface-based failure explanation.
+    3. Freeze the spatial prompt. Change ONE text description in otherwise identical parallel candidates, rerun and compare scores/ranking. Explain what changed in the denominator and what that cannot prove about semantic correctness.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Swap roles. Restore the text candidates, change only ONE spatial prompt item (point, exclusion or box) and compare masks on the fixed image/revisions. Mark included/excluded pixels around the intended person and diagnose a failure.
+
+    5. Recommend a prompt for the stated output, citing score and mask evidence separately. Propose one next controlled test; explain why a text label and a spatial mask are different outputs and neither comparison trains weights.
+
+    **Evidence log:** run | text item changed | spatial item changed | score/rank evidence | mask inclusion/exclusion. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -42,7 +48,7 @@ def _(mo):
     mo.md("""
     # Test Two Vision Prompt Routes
 
-    15-minute group task after guided setup. Run actual CLIP text inference and SAM prompt decoding with official pinned checkpoints and cached matching image encodings.
+    30-minute investigation after guided setup. Run actual CLIP text inference and SAM prompt decoding with official pinned checkpoints and cached matching image encodings.
 
     Predict → complete short TODOs → change one setting → inspect → explain → download.
 
@@ -63,6 +69,17 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(day3, mo, prompt_image):
     mo.image(src=str(day3.ASSETS/(prompt_image.value+'.jpg')),width=380)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Choose the interface before the prompt
+    CLIP compares image and text vectors with cosine similarity $s=f(x)^Tg(t)/(\|f(x)\|\|g(t)\|)$. Reported candidate scores normalize over YOUR supplied candidate set. Changing one description can change both relative meaning and the normalization; the score is not a standalone probability that a description is true.
+
+    SAM takes original-image spatial coordinates: a positive point requests included content, a negative point excludes content, and a box constrains a region. It returns pixels, not a text class. On this bus photo, inspect the intended person near x280,y650 before editing. Hold the other prompt route fixed when comparing; changing text and geometry together would leave the cause ambiguous. Keep images and model revisions fixed; neither prompt edit updates weights.
+    """)
     return
 
 
@@ -116,6 +133,19 @@ def _(
         except (ValueError,TypeError,KeyError,OSError) as _e:_prompt_error=str(_e)
     mo.callout(_prompt_error,kind='warn') if _prompt_error else mo.callout('Complete candidates/spatial prompt, then run. Models must be cached by preflight.',kind='info') if prompt_result is None else mo.vstack([mo.md('### Fixed baseline'),base_prompt_result[1],mo.md('### Your changed prompt'),prompt_result[1],mo.md('```json\n'+json.dumps(prompt_result[0],indent=2)+'\n```')])
     return base_prompt_result, prompt_result
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="run | text item changed | spatial item changed | score/rank evidence | mask inclusion/exclusion\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"run | text item changed | spatial item changed | score/rank evidence | mask inclusion/exclusion"},'day3-block4-comparison-log',label='Download comparison log (baseline + changed runs)')
+    return
 
 
 @app.cell(hide_code=True)

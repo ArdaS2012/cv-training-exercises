@@ -64,6 +64,6 @@ def masks_plot(rgb, masks):
     return fig
 
 
-def download(mo, observations, values, name):
+def download(mo, observations, values, name, label='Download findings (current controls + observations)'):
     payload=json.dumps({'observations':observations,'settings_and_measurements':values},indent=2)
-    return mo.download(payload.encode(),filename=name+'.json',label='Download findings (current controls + observations)')
+    return mo.download(payload.encode(),filename=name+'.json',label=label)

@@ -3,9 +3,9 @@
 
 ## Exercise + breakout
 
-Follow the [15-minute group task](GROUP_TASK.md) after guided setup.
+Follow the [30-minute group task](GROUP_TASK.md) after guided setup.
 
-CV Day 3 Block 1 · guided setup, then a 15-minute exercise + breakout.
+CV Day 3 Block 1 · guided setup, then a 30-minute exercise + breakout.
 
 Run supplied pretrained tiny U-Nets on held-out authored scenes; compare semantic classes, learned instance identities and the retained Day1 cluster mask.
 
@@ -29,3 +29,7 @@ Semantic class IDs describe categories; instance IDs describe separate objects w
 ## Current teaching handoff
 
 CV Day 3, Block 1: actual slide **15 — Exercise: overlap versus object identity** launches the combined exercise + breakout. Return to plenary at the agenda’s room end. The notebook and group task are self-contained; private trainer files are not required.
+
+## Investigation focus
+
+Mask detective: good overlap, wrong object count?. Semantic masks label classes; instance masks identify objects. U-Net skips preserve spatial detail. IoU/Dice compare aligned regions; class overlap alone cannot certify object count. Keep the task beside the output, preserve run A in the comparison log, and compare a controlled change before making your decision.

@@ -20,19 +20,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Mask detective: good overlap, wrong object count?
 
-    **15 minutes in pairs after guided setup.** Assess segmentation by both pixel overlap and the task’s class/identity requirements.
+    **30 minutes in pairs.** Semantic masks label classes; instance masks identify objects. U-Net skips preserve spatial detail. IoU/Dice compare aligned regions; class overlap alone cannot certify object count.
 
-    1. Predict whether high foreground overlap can coexist with a wrong object count. Complete both TODOs and check one small mask pair manually.
+    ### Investigate, do not just run
 
-    2. Compare separate versus touching shapes with model and warm-class selection fixed. Record semantic/instance overlays, overlap and observed identity/count errors.
+    1. Inspect the separate-shapes scene and predict class overlap and instance count after objects touch. Name the class and reference you will compare.
 
-    3. Inspect the exact Day 1 scene and retained cluster mask. Explain which method supplies class meaning and which supplies object identities; use a concrete boundary or touching-object failure as evidence.
+    2. Complete class membership and IoU/Dice TODOs. Hand-check a tiny mask pair and the stated empty-mask convention before interpreting real learned outputs.
 
-    **Bring back:** Overlap calculation, semantic/instance comparisons and a supported distinction between mask quality and instance correctness.
+    3. Keep the selected class and models fixed; compare Separate shapes and Touching shapes. Record class IoU/Dice, reference versus predicted identities, and point to the boundary where an identity is lost or retained.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Swap roles and inspect Touching ambiguity as a stress case. Explain whether the failure is wrong class membership, merged identity or boundary displacement. Save an overlay that supports your diagnosis; unchanged results also need evidence.
+
+    5. Decide whether semantic or instance output is enough for counting individual shapes. Cite overlap AND identity evidence; explain why these authored scenes cannot establish performance on real clinical or industrial images.
+
+    **Evidence log:** scene | selected class | IoU | Dice | reference/predicted identities | boundary evidence. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -42,7 +48,7 @@ def _(mo):
     mo.md("""
     # Compare Semantic and Instance Masks
 
-    15-minute group task after guided setup. Run supplied pretrained tiny U-Nets on held-out authored scenes; compare semantic classes, learned instance identities and the retained Day1 cluster mask.
+    30-minute investigation after guided setup. Run supplied pretrained tiny U-Nets on held-out authored scenes; compare semantic classes, learned instance identities and the retained Day1 cluster mask.
 
     Predict → complete short TODOs → change one setting → inspect → explain → download.
 
@@ -58,6 +64,17 @@ def _(mo):
     prediction=mo.ui.text_area(label='Predict: can foreground overlap be high while object count is wrong?',full_width=True)
     mo.vstack([prediction,mo.hstack([scene_choice,class_choice])])
     return class_choice, prediction, scene_choice
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Read labels, regions and identities separately
+    A semantic output assigns one class per pixel. A class-selection mask is Boolean membership in that class. An instance map also supplies separate IDs for individual objects. The foreground union can remain the same even if identities merge.
+
+    For aligned masks $A,B$, IoU is $|A\cap B|/|A\cup B|$ and Dice is $2|A\cap B|/(|A|+|B|)$. Counts refer to pixels in the SAME class or matched instance. Use the notebook's stated convention when both masks are empty. Read overlap beside the overlay and identity count: good foreground overlap can coexist with a counting failure. U-Net skips combine retained spatial detail with decoded features; this architecture alone does not guarantee instance IDs.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -96,6 +113,19 @@ def _(class_choice, day3, json, mo, overlap, scene_choice, select_class):
     except (ValueError,TypeError,KeyError,ZeroDivisionError) as _e:_seg_error=str(_e)
     mo.callout(_seg_error,kind='warn') if _seg_error else mo.callout('Complete class selection and overlap TODOs.',kind='info') if seg_result is None else mo.vstack([seg_result[1],mo.md('```json\n'+json.dumps(seg_result[0],indent=2)+'\n```')])
     return (seg_result,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="scene | selected class | IoU | Dice | reference/predicted identities | boundary evidence\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"scene | selected class | IoU | Dice | reference/predicted identities | boundary evidence"},'day3-block1-comparison-log',label='Download comparison log (baseline + changed runs)')
+    return
 
 
 @app.cell(hide_code=True)

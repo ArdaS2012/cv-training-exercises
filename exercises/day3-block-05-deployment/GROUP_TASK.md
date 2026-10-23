@@ -1,8 +1,12 @@
-# Exercise: verify a served pipeline
+# Deployment workshop: does the saved model still mean the same thing?
 
-**Exercise + breakout · CV Day 3 Block 5 · 15 minutes in pairs**
+**Exercise + breakout · CV Day 3 Block 5 · 30 minutes in pairs**
 
-Learning goal: Verify an adapted model’s inference contract through reload and serving rather than merely saving weights.
+Your job is to produce a defensible decision from the actual outputs, including a result that challenges your first guess. One partner edits; the other checks controls, arithmetic and visual evidence. Swap at minute 15.
+
+## Keep these slide takeaways beside your experiment
+
+Domain shift needs target validation. Head-only adaptation freezes the backbone. A package includes transforms, labels and revision. Hub storage differs from a running endpoint; reload and an actual request test the contract.
 
 ## Before the room opens
 
@@ -10,20 +14,26 @@ Preload the small backbone/domain dataset and test the local serving wrapper. Sh
 
 Use the [shared setup](../../README.md); model downloads and launch checks happen before the task. Start from the repository root with `uv run --locked python start.py --day 3 --block 5`. Keep the starter open. Prerequisite TODOs discussed in plenary belong to setup; the task below is the room assignment.
 
-## Your group task
+## Your investigation
 
-1. Predict which parameter subset changes. Complete the adaptation config with the declared target order and rate, then run adapt/save/reload/local request at rate 0.03.
+1. Predict which groups change during head-only adaptation and what must survive save/reload. Sketch pixels → transform → model → label before configuring the real pipeline.
 
-2. Check before/after validation, frozen-group deltas, original versus reloaded score vectors and the actual HTTP response. Identify the evidence for identical preprocessing and label interpretation.
+2. Complete the bounded adaptation/label configuration. At rate 0.03 run adapt/save/reload/local HTTP; inspect validation before/after and frozen versus head deltas.
 
-3. Specify a concrete failure if label order or preprocessing were omitted. Describe how the observed local evidence would detect it and what extra checks a hosted service would require.
+3. Inspect the package files and actual response. Match score indices to saved labels, compare original/reloaded vectors within tolerance, and trace the same raw 8×8 pixels through the declared normalization.
 
-## Bring back
+4. Swap roles. Change ONLY learning rate to 0.10, rerun with fixed data/seed/budget, and compare validation and changed-head evidence. Keep the first package/report before rerunning; a worse result is useful evidence.
 
-Validation comparison, frozen-weight check, reproducible package and recorded local request/response with a deployment failure analysis.
+5. Perform a label-interpretation fault drill using the actual response: on paper, swap the two displayed label names while leaving the vector fixed. Show which interpretation becomes wrong although numeric reload agreement still passes. Choose a package using validation, and explain the extra checks a hosted service would require.
 
-Use the notebook’s prediction/observation fields. Save the Python source and download findings to retain browser inputs and measurements. Both partners should be able to explain the conclusion; swap editor/checker around halfway. If you finish early, state a competing explanation and a new controlled test that would distinguish it.
+## Evidence to bring back
+
+Keep a short comparison log with columns **run/rate | validation before/after | frozen/head deltas | reload agreement | HTTP/label evidence**. Save run A before changing settings: the notebook’s current report is replaced when controls rerun. Download each comparison figure/report plus the experiment log. Save the Python source separately; browser inputs are not saved in it.
+
+Bring one prediction, measured comparison, marked visual example or traced response, a decision and one limitation. Both partners must explain why the evidence supports it.
 
 ## Work within the timebox
 
-2 minutes to predict and agree; 7 to implement and compare; 4 to diagnose and defend; 2 to record/export. Ask for help through the trainer’s chat/room-visit route if blocked. Return to plenary for review and the scheduled quiz. Honest unchanged or failed results count as evidence when they are explained; do not invent measurements.
+0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
+
+If blocked, ask through the trainer’s chat/room-visit route. Use the working partner’s device if needed. Honest unchanged or worse outputs count when explained; label a supplied measured fallback instead of claiming fresh inference.

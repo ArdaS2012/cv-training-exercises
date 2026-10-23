@@ -19,19 +19,23 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Hands-on investigation: your shared mission
 
-    **15 minutes in pairs after guided setup.** Choose compression from quantitative evidence and interpret nonlinear views within their limits.
+    **30 minutes in pairs.** Choose an image compression budget: how few coordinates preserve the detail your user needs?
 
-    1. Predict how retained variance and reconstruction error change. Complete the basis/projection/reconstruction TODOs using the supplied SVD; check matrix shapes.
+    ### Prior-slide takeaways to use now
 
-    2. Compare k=1,8,32 on identical image rows. Choose the smallest of these k values you would accept for a declared detail-preservation goal and justify it with measured variance/error and one image.
+    Slides 23–28: center first; PCA uses SVD directions and discards components. Error and retained variance answer different questions; 2D gaps do not prove classes.
 
-    3. Inspect the prewarmed t-SNE and UMAP views. Challenge the statement “widely separated islands prove different classes,” and name a claim each plot cannot support.
+    1. Choose one visible detail in input row 0 that must survive compression; predict the smallest acceptable rank. Complete the three PCA expressions, checking 300×64 → 300×k → 300×64 shapes. Explain why the mean must be restored.
 
-    **Bring back:** Three-k measurement table, one reconstruction comparison, justified k choice and two visualization limitations.
+    2. Use the identical rows at k=1, 8 and 32. Log retained variance, MSE and whether that detail survives; save each run. Swap roles at minute 15 and choose the smallest tested rank meeting your declared goal, even when its plot looks less attractive.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    3. Run the supplied nonlinear views at neighbor setting 5 and 30 while keeping rows/seed fixed. Track a recognizable labelled region and describe what changed. Challenge a class-separation claim with evidence; explain why perplexity and UMAP neighbor count are different controls.
+
+    **Bring back:** Three measured rank rows, a detail-preservation decision and a fixed-row neighborhood comparison with an interpretation limit.
+
+    **Route:** 0–4 predict; 4–12 implement and trace; 12–22 compare (swap roles at 15); 22–27 challenge and decide; 27–30 explain, save and export. Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
     """)
     return
 
@@ -41,9 +45,9 @@ def _(mo):
     mo.md("""
     # Reduce and Reconstruct Image Data
 
-    15-minute group task after guided setup. Use centered SVD to calculate PCA projections and reconstructions. Compare retained variance and image error at three k values. Run the supplied t-SNE and UMAP helpers on the same rows with fixed seeds; record two neighborhood-interpretation limitations.
+    30-minute investigation after guided setup. Use centered SVD to calculate PCA projections and reconstructions. Compare retained variance and image error at three k values. Run the supplied t-SNE and UMAP helpers on the same rows with fixed seeds; record two neighborhood-interpretation limitations.
 
-    Predict → complete the short TODOs → change one control → explain → download findings.
+    Inspect → predict → implement and trace → compare → challenge → explain and download evidence.
 
     Use the cell code control to open TODO cells. Edit only `# TODO` areas and run with Shift+Enter. Waiting messages are normal before completion. Save Python with Ctrl+S / Command+S; widget values need the findings download. Work in pairs and swap who edits.
     """)
@@ -123,7 +127,7 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    observations=mo.ui.text_area(label='Findings: compare k=1,8,32; one limitation each of t-SNE and UMAP',full_width=True)
+    observations=mo.ui.text_area(value='Rank k | retained variance | MSE | chosen detail survives? | evidence in row 0\n1 | | | |\n8 | | | |\n32 | | | |\nAccepted detail/goal and smallest acceptable tested rank:\nNonlinear setting 5 versus 30: one located change per method:\nClaim the plots cannot establish and why:',label="Evidence log — keep every trial, mechanism and decision",full_width=True)
     observations
     return (observations,)
 

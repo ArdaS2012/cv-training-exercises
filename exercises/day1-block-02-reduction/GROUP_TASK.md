@@ -1,29 +1,43 @@
 # Exercise: defend a projection
 
-**Exercise + breakout · CV Day 1 Block 2 · 15 minutes in pairs**
+**Exercise + breakout · CV Day 1 Block 2 · 30 minutes in pairs**
 
-Learning goal: Choose compression from quantitative evidence and interpret nonlinear views within their limits.
+## Your mission
+
+Choose an image compression budget: how few coordinates preserve the detail your user needs?
+
+## Keep these prior-slide takeaways beside the task
+
+Slides 23–28: center first; PCA uses SVD directions and discards components. Error and retained variance answer different questions; 2D gaps do not prove classes.
+
+Why this helps: explain the mechanism before trusting a colorful output. Your partner must be able to reproduce the comparison from your settings and evidence.
 
 ## Before the room opens
 
-Prewarm the supplied t-SNE/UMAP helpers in plenary and show both plots for the same rows. Explain centering and U/S/V shapes. Leave the three small PCA expressions for rooms; no optimizer setup is part of the room task.
+Use [shared setup](../../README.md); launch checks and any warming happen before class. Start from the repository root with `uv run --locked python start.py --block 2`. Locate the supplied input, controls, TODOs and results; the conceptual implementation and investigation below belong to the room.
 
-Use the [shared setup](../../README.md); model downloads and launch checks happen before the task. Start from the repository root with `uv run --locked python start.py --block 2`. Keep the starter open. Prerequisite TODOs discussed in plenary belong to setup; the task below is the room assignment.
+## Investigate together
 
-## Your group task
+1. Choose one visible detail in input row 0 that must survive compression; predict the smallest acceptable rank. Complete the three PCA expressions, checking 300×64 → 300×k → 300×64 shapes. Explain why the mean must be restored.
 
-1. Predict how retained variance and reconstruction error change. Complete the basis/projection/reconstruction TODOs using the supplied SVD; check matrix shapes.
+2. Use the identical rows at k=1, 8 and 32. Log retained variance, MSE and whether that detail survives; save each run. Swap roles at minute 15 and choose the smallest tested rank meeting your declared goal, even when its plot looks less attractive.
 
-2. Compare k=1,8,32 on identical image rows. Choose the smallest of these k values you would accept for a declared detail-preservation goal and justify it with measured variance/error and one image.
+3. Run the supplied nonlinear views at neighbor setting 5 and 30 while keeping rows/seed fixed. Track a recognizable labelled region and describe what changed. Challenge a class-separation claim with evidence; explain why perplexity and UMAP neighbor count are different controls.
 
-3. Inspect the prewarmed t-SNE and UMAP views. Challenge the statement “widely separated islands prove different classes,” and name a claim each plot cannot support.
+## Use the 30 minutes purposefully
+
+- **0–4:** Inspect the input, choose the goal and write a prediction before running.
+- **4–12:** Complete the small concept TODOs; trace one input through your code and fix shape/value mistakes together.
+- **12–22:** Run the controlled comparison, record each result before changing controls, and swap editor/checker at minute 15.
+- **22–27:** Test the counterexample/changed condition; explain the mechanism and decide.
+- **27–30:** Both partners rehearse a 45-second evidence-based explanation; save code and download findings.
 
 ## Bring back
 
-Three-k measurement table, one reconstruction comparison, justified k choice and two visualization limitations.
+Three measured rank rows, a detail-preservation decision and a fixed-row neighborhood comparison with an interpretation limit.
 
-Use the notebook’s prediction/observation fields. Save the Python source and download findings to retain browser inputs and measurements. Both partners should be able to explain the conclusion; swap editor/checker around halfway. If you finish early, state a competing explanation and a new controlled test that would distinguish it.
+Use the notebook's evidence log; a final screenshot alone loses the comparison. Downloads contain current controls/measurements plus your cumulative written log, so save after each trial. Saving Python does not retain widget inputs. An unchanged or worse result is useful when you can explain it. If blocked, request a room visit through the trainer chat; inspect the supplied input/baseline together while help arrives.
 
-## Work within the timebox
+## Explain it to another pair
 
-2 minutes to predict and agree; 7 to implement and compare; 4 to diagnose and defend; 2 to record/export. Ask for help through the trainer’s chat/room-visit route if blocked. Return to plenary for review and the scheduled quiz. Honest unchanged or failed results count as evidence when they are explained; do not invent measurements.
+“We predicted __ because __. We changed only __; the evidence was __. We choose __ for __, but cannot conclude __. Our next test would hold __ fixed and change __.”

@@ -20,19 +20,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Match desk: which mistake costs more?
 
-    **15 minutes in pairs after guided setup.** Connect embedding distance, pair-loss convention and decision-cost tradeoffs.
+    **30 minutes in pairs.** Both branches share encoder weights. Distance compares embeddings; a decision threshold does not retrain them. Here y=1 means similar. A wider acceptance threshold trades missed matches for false matches.
 
-    1. Predict which error type will grow with a higher threshold. Complete both TODOs and check one similar and one dissimilar pair loss with the stated label convention.
+    ### Investigate, do not just run
 
-    2. Keep pairs/encoder/embeddings fixed. Compare thresholds 0.5 and 0.9, counting false matches and missed matches; identify a changed decision or explain why none crossed the cutoff.
+    1. Look at a similar and dissimilar image pair; predict their distance ordering and which error increases when the cutoff grows. State the y=1 convention before coding.
 
-    3. Choose a threshold for a scenario where false matches are more costly. Justify it with observed errors and describe how you would validate it on new pairs without tuning on the test set.
+    2. Complete per-pair Euclidean distance and contrastive-loss TODOs. Manually trace one similar and one dissimilar loss, including the margin case; inspect the actual pair images beside measured distances.
 
-    **Bring back:** Checked pair losses, two-threshold error table, one explained pair and a conditional threshold decision.
+    3. Freeze pairs/encoder/embeddings and compare cutoffs 0.5 and 0.9. Record false matches and missed matches; identify the pair whose decision changes, or explain why no distance crossed the cutoff.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Swap roles. Act as two clients: an access system that fears false matches, and a search tool that fears missed matches. Use the SAME error table to defend a different threshold for each; inspect one visual counterexample to your intuition.
+
+    5. Choose one policy and explain its cost tradeoff with an actual pair. Specify how new validation pairs would set the threshold and untouched test pairs would estimate performance; do not tune repeatedly on these teaching pairs.
+
+    **Evidence log:** cutoff | false matches | missed matches | changed pair | intended error cost. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -42,7 +48,7 @@ def _(mo):
     mo.md("""
     # Compare Image Pairs
 
-    15-minute group task after guided setup. Use a supplied trained Siamese encoder, held-out pairs and margin convention y=1 for similar; no training from scratch.
+    30-minute investigation after guided setup. Use a supplied trained Siamese encoder, held-out pairs and margin convention y=1 for similar; no training from scratch.
 
     Predict → complete short TODOs → change one setting → inspect → explain → download.
 
@@ -57,6 +63,17 @@ def _(mo):
     prediction=mo.ui.text_area(label='Predict which error type grows when the threshold increases',full_width=True)
     mo.vstack([prediction,threshold])
     return prediction, threshold
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Read one image pair at a time
+    The same learned encoder maps both images into eight-coordinate feature vectors. For each pair, $d=\|a-b\|_2$ is Euclidean distance: compare corresponding coordinates and reduce within that pair, not across the batch. Small distance means close representations under this encoder, not guaranteed semantic equivalence.
+
+    Here $y=1$ denotes a similar pair. Contrastive loss is $L=yd^2+(1-y)\max(0,m-d)^2$, where $m>0$ is the separation margin. Similar pairs are penalized for distance; dissimilar pairs stop paying once separated beyond the margin. Decision cutoff and training margin are different settings. Accept a match when distance is at most the cutoff; increasing it accepts more pairs without changing embeddings.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -95,6 +112,19 @@ def _(contrastive, day3, distance, mo, threshold):
     except (ValueError,TypeError,KeyError) as _e:_pair_error=str(_e)
     mo.callout(_pair_error,kind='warn') if _pair_error else mo.callout('Complete distance/loss TODOs.',kind='info') if pair_result is None else mo.vstack([pair_result[1],mo.ui.table(pair_result[0]['pairs']),mo.md('False matches: '+str(pair_result[0]['false_matches'])+' · missed matches: '+str(pair_result[0]['missed_matches']))])
     return (pair_result,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="cutoff | false matches | missed matches | changed pair | intended error cost\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"cutoff | false matches | missed matches | changed pair | intended error cost"},'day3-block2-comparison-log',label='Download comparison log (baseline + changed runs)')
+    return
 
 
 @app.cell(hide_code=True)

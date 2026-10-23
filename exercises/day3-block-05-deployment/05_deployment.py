@@ -20,19 +20,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Deployment workshop: does the saved model still mean the same thing?
 
-    **15 minutes in pairs after guided setup.** Verify an adapted model’s inference contract through reload and serving rather than merely saving weights.
+    **30 minutes in pairs.** Domain shift needs target validation. Head-only adaptation freezes the backbone. A package includes transforms, labels and revision. Hub storage differs from a running endpoint; reload and an actual request test the contract.
 
-    1. Predict which parameter subset changes. Complete the adaptation config with the declared target order and rate, then run adapt/save/reload/local request at rate 0.03.
+    ### Investigate, do not just run
 
-    2. Check before/after validation, frozen-group deltas, original versus reloaded score vectors and the actual HTTP response. Identify the evidence for identical preprocessing and label interpretation.
+    1. Predict which groups change during head-only adaptation and what must survive save/reload. Sketch pixels → transform → model → label before configuring the real pipeline.
 
-    3. Specify a concrete failure if label order or preprocessing were omitted. Describe how the observed local evidence would detect it and what extra checks a hosted service would require.
+    2. Complete the bounded adaptation/label configuration. At rate 0.03 run adapt/save/reload/local HTTP; inspect validation before/after and frozen versus head deltas.
 
-    **Bring back:** Validation comparison, frozen-weight check, reproducible package and recorded local request/response with a deployment failure analysis.
+    3. Inspect the package files and actual response. Match score indices to saved labels, compare original/reloaded vectors within tolerance, and trace the same raw 8×8 pixels through the declared normalization.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Swap roles. Change ONLY learning rate to 0.10, rerun with fixed data/seed/budget, and compare validation and changed-head evidence. Keep the first package/report before rerunning; a worse result is useful evidence.
+
+    5. Perform a label-interpretation fault drill using the actual response: on paper, swap the two displayed label names while leaving the vector fixed. Show which interpretation becomes wrong although numeric reload agreement still passes. Choose a package using validation, and explain the extra checks a hosted service would require.
+
+    **Evidence log:** run/rate | validation before/after | frozen/head deltas | reload agreement | HTTP/label evidence. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -42,7 +48,7 @@ def _(mo):
     mo.md("""
     # Adapt Save Reload and Serve
 
-    15-minute group task after guided setup. Fit a small target head under an explicit brightness/contrast shift, export validation/package metadata and witness a real local request/response.
+    30-minute investigation after guided setup. Fit a small target head under an explicit brightness/contrast shift, export validation/package metadata and witness a real local request/response.
 
     Predict → complete short TODOs → change one setting → inspect → explain → download.
 
@@ -58,6 +64,17 @@ def _(mo):
     prediction=mo.ui.text_area(label='Predict which parameters change and what must survive reload',full_width=True)
     mo.vstack([prediction,adapt_rate,run_package])
     return adapt_rate, prediction, run_package
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Treat the package as a prediction contract
+    The actual route is raw pixels → saved preprocessing → adapted model → scores → saved label order. Here raw images are 8×8 grayscale values in 0..16; the declared transform divides by 16. The backbone has 48 features and the target head emits two even/odd logits. Head-only adaptation permits head updates while frozen groups have zero deltas.
+
+    Compare target validation before/after fitting, then reload with the same pixels and metadata. Equal score vectors within tolerance test numeric reproduction. Label order is a separate semantic check: swapping label names can leave every number equal while changing what the response means. The real local HTTP request tests a running local contract; storing artifacts on the Hub and operating a hosted service are distinct steps.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -89,6 +106,19 @@ def _(adapt_rate, day3, json, mo, run_package):
         except (ValueError,TypeError,KeyError) as _e:_package_error=str(_e)
     mo.callout(_package_error,kind='warn') if _package_error else mo.callout('Complete the configuration TODO, then run the prepared pipeline.',kind='info') if package_result is None else mo.md('```json\n'+json.dumps(package_result[0],indent=2)+'\n```')
     return (package_result,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="run/rate | validation before/after | frozen/head deltas | reload agreement | HTTP/label evidence\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"run/rate | validation before/after | frozen/head deltas | reload agreement | HTTP/label evidence"},'day3-block5-comparison-log',label='Download comparison log (baseline + changed runs)')
+    return
 
 
 @app.cell(hide_code=True)

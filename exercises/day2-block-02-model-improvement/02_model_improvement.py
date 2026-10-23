@@ -18,19 +18,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Training clinic: can you defend an improvement?
 
-    **15 minutes in pairs after guided setup.** Make a controlled improvement decision without leaking test evidence into selection.
+    **30 minutes in pairs.** Parameters are learned; hyperparameters are chosen. Hold split, seed and budget fixed. Choose by validation loss; reserve test data until the decision is frozen. A lower training loss alone is insufficient.
 
-    1. Predict the effect of rate 0.03 or penalty 0.001; choose one factor only. Complete the configuration TODO and run the two supplied 24-epoch CPU trainings.
+    ### Investigate, do not just run
 
-    2. Complete validation selection. Compare curves and the declared validation losses, reporting a result that supports or contradicts your hypothesis and an alternative explanation.
+    1. Inspect the baseline settings (rate 0.01, penalty 0). Predict the training/validation curve change for either a rate or penalty intervention; write which outcome would contradict your hypothesis.
 
-    3. Freeze the selected configuration, then use the reserved-test action once. Explain why using this test score for another tuning decision would invalidate its final-evaluation role.
+    2. Complete configuration and validation-selection TODOs. Run the supplied short CPU trainings with just that factor changed. Read both curves, not only the last number; record a point where their behavior differs.
 
-    **Bring back:** Configuration/curve table, validation-based choice, one reserved-test result and an uncertainty statement.
+    3. Swap roles. Test a second value of the SAME factor, holding the other setting, split, seed and budget fixed. Save both comparisons before rerunning; choose using the declared validation loss only.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Look for a contrary result: a faster initial loss drop, better training fit or larger penalty that did not give the best validation outcome. Explain it using the measured short-run curves; if absent, inspect the labelled longer-run reference without mixing its budget into your live comparison.
+
+    5. Freeze your candidate choice and justification, then use the reserved-test action once. Report that estimate without retuning. Explain what small data, one seed and the short budget prevent you from claiming.
+
+    **Evidence log:** run | changed factor/value | train-curve evidence | validation loss | decision before test. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -40,7 +46,7 @@ def _(mo):
     mo.md("""
     # Compare Controlled Training Runs
 
-    15-minute group task after guided setup. Run two real short CPU trainings, select by validation and evaluate the chosen configuration once on reserved examples.
+    30-minute investigation after guided setup. Run two real short CPU trainings, select by validation and evaluate the chosen configuration once on reserved examples.
 
     Predict → complete the short TODOs → change one control → inspect → explain → download.
 
@@ -58,6 +64,17 @@ def _(mo):
     prediction=mo.ui.text_area(label='Predict train/validation behavior before running',full_width=True)
     mo.vstack([mo.hstack([change,rate,penalty,run_compare],wrap=True),prediction])
     return change, penalty, prediction, rate, run_compare
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Read the curves before choosing
+    A parameter is a learned weight. Learning rate controls the size of training updates; the L2 penalty adds $\lambda\|\theta\|_2^2$ to the training objective. Here $\lambda$ is nonnegative and $\theta$ is the weight vector. The baseline uses rate 0.01 and penalty 0. A fair experiment changes just one setting at the same split, seed and training budget.
+
+    Read horizontal position as training progress and vertical position as the stated loss. Training loss measures fit to training data; validation data loss guides selection. A widening gap suggests a hypothesis, not its cause. Choose the smaller declared validation loss, freeze that choice, then inspect reserved test once. The longer-run measured reference has a different budget and must be described separately.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -140,6 +157,19 @@ def _(day2, mo):
     _reference_path=day2.ASSETS/'longer-training-reference.json'
     _reference=json.loads(_reference_path.read_text()) if _reference_path.is_file() else None
     mo.vstack([mo.md('### Longer-run measured reference (separate preparation experiment)'), mo.md(_reference['label']), mo.ui.table(_reference['summary']), day2.training_figure(_reference['runs'], title='Measured 120-epoch preparation runs')]) if _reference else mo.md('Reference preflight required.')
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="run | changed factor/value | train-curve evidence | validation loss | decision before test\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"run | changed factor/value | train-curve evidence | validation loss | decision before test"},'day2-block2-comparison-log',label='Download comparison log (baseline + changed runs)')
     return
 
 

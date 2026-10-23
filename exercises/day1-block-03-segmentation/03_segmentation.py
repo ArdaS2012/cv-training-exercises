@@ -19,19 +19,23 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Hands-on investigation: your shared mission
 
-    **15 minutes in pairs after guided setup.** Explain how feature design changes pixel partitions and why a partition does not establish object identity.
+    **30 minutes in pairs.** Build a region proposal for an image tool: can it separate distant red regions without inventing object labels?
 
-    1. Predict whether the two distant red regions will share a group. Complete feature/reshape TODOs and compare the color-only mask with the spatial mask at weight 0.5, same cluster count and seed.
+    ### Prior-slide takeaways to use now
 
-    2. Change only position weight to 1.0. Compare both spatial masks, identifying one boundary or disconnected region that changes and one region that does not.
+    Slides 36–38: preserve pixel↔row order to restore H×W. Color and position change similarity; a cluster is not an object label or instance.
 
-    3. Decide whether either mask justifies an object-count or semantic-label claim. Use a lighting or same-color counterexample and retain the baseline for Day 3.
+    1. Locate the two red regions and predict whether they will share a group. Complete the feature and H×W reshape TODOs. Use K=3 and seed 42; explain what one feature row represents before running.
 
-    **Bring back:** Color-only and spatial masks, fixed-settings comparison and a supported usefulness/failure explanation.
+    2. Hold image, K and seed fixed; compare position weights 0, 0.5 and 1.0. Log whether probes (row18,col12) and (row10,col36) share a group, and locate a boundary that moves or remains fixed. Swap roles at minute 15. Compare membership, not the numeric value of a cluster ID.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    3. Choose a weight for a declared region-selection purpose. Use the lighting gradient or a split background as a counterexample to your own choice. State what annotation would be needed to call the regions objects; retain the masks for Day 3.
+
+    **Bring back:** Three weight trials with fixed settings, a probe/boundary comparison, chosen mask and a concrete semantic/instance limitation.
+
+    **Route:** 0–4 predict; 4–12 implement and trace; 12–22 compare (swap roles at 15); 22–27 challenge and decide; 27–30 explain, save and export. Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
     """)
     return
 
@@ -41,9 +45,9 @@ def _(mo):
     mo.md("""
     # Segment a Small Image
 
-    15-minute group task after guided setup. Compare color-only clustering with color plus scaled position on the supplied authored RGB scene. Export two masks. Explain a useful partition, lighting sensitivity and why a cluster does not establish object meaning or object identity.
+    30-minute investigation after guided setup. Compare color-only clustering with color plus scaled position on the supplied authored RGB scene. Export two masks. Explain a useful partition, lighting sensitivity and why a cluster does not establish object meaning or object identity.
 
-    Predict → complete the short TODOs → change one control → explain → download findings.
+    Inspect → predict → implement and trace → compare → challenge → explain and download evidence.
 
     Use the cell code control to open TODO cells. Edit only `# TODO` areas and run with Shift+Enter. Waiting messages are normal before completion. Save Python with Ctrl+S / Command+S; widget values need the findings download. Work in pairs and swap who edits.
     """)
@@ -107,14 +111,15 @@ def _(color_labels, display, mo, np, rgb, spatial_mask):
         _view = mo.callout('A mask has height×width labels, without a color channel.',kind='warn')
     else:
         masks['Color + position']=spatial_mask
-        _view = display.masks_plot(rgb,masks)
+        _probes=[{'mask':_name,'red probe (18,12)':int(_mask[18,12]),'red probe (10,36)':int(_mask[10,36]),'same group?':bool(_mask[18,12]==_mask[10,36])} for _name,_mask in masks.items()]
+        _view = mo.vstack([display.masks_plot(rgb,masks),mo.ui.table(_probes,selection=None),mo.md('Probe coordinates are (row, column). Equal IDs within one mask mean shared membership; ID values across fits do not name the same object. Log the probes plus one boundary before changing position weight.')])
     _view
     return (masks,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    observations=mo.ui.text_area(label='Findings: one useful region, one failure, lighting effect; keep for Day 3',full_width=True)
+    observations=mo.ui.text_area(value='Position weight | K/seed | red probes share a group? | changed boundary | useful region / failure\n0 | 3/42 | | |\n0.5 | 3/42 | | |\n1.0 | 3/42 | | |\nRegion-selection goal and choice:\nLighting/background counterexample:\nWhat extra evidence would justify an object label/count?',label="Evidence log — keep every trial, mechanism and decision",full_width=True)
     observations
     return (observations,)
 

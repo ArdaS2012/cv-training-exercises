@@ -18,19 +18,25 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Adaptation audit: prove which weights learned
 
-    **15 minutes in pairs after guided setup.** Verify adaptation behavior from changed weights and held-out outcomes rather than a label such as fine-tuning.
+    **30 minutes in pairs.** The head width follows target labels. Frozen means no parameter update, not identical activations. Fine-tuning selects a trainable subset; more changed weights do not guarantee better validation.
 
-    1. Predict which groups can change. Complete the target-head and selective-training TODOs, keeping the first convolution frozen; run the prepared head fit and brief last-block fine-tune.
+    ### Investigate, do not just run
 
-    2. Compare parameter counts/deltas and validation predictions across both routes. Identify evidence that a frozen group remained fixed and a selected group was eligible to learn.
+    1. Sketch the target output shape and predict which parameter groups may change in head-only and last-block adaptation. Use the target label order shown in the notebook.
 
-    3. Recommend a route for a small target dataset with a possible domain shift. State one limitation and what fresh validation evidence would change your recommendation.
+    2. Complete the head and trainable-group TODOs, leaving the first convolution frozen. Run the supplied real head update and bounded last-block update. Inspect names, counts and actual parameter deltas.
 
-    **Bring back:** Trainable-group/count/delta table, validation comparison and a conditional adaptation choice.
+    3. Swap roles. Trace one frozen and one eligible group from configuration to measured delta, then compare held-out outcomes on the same split and record the extra fine-tuning budget. Explain the difference between permission to update and a measured nonzero change.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    4. Inspect a target example whose prediction changed, or document that no displayed decision changed. Explain how scores/activations can change while the first convolution stays fixed. Distinguish that evidence from a claim that every eligible coefficient changed.
+
+    5. Recommend the simpler head-only baseline or selective route for this small target task. Cite a measured delta and validation result, then name the fresh domain-validation evidence that could reverse your decision.
+
+    **Evidence log:** route | trainable groups/count | frozen delta | eligible delta | validation evidence. Save a run before changing controls. Export both the current findings and your comparison log.
+
+    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -40,7 +46,7 @@ def _(mo):
     mo.md("""
     # Adapt a Pretrained Classifier
 
-    15-minute group task after guided setup. Fit a new head on frozen pretrained features, then compare a real selective last-block fine-tune and held-out predictions.
+    30-minute investigation after guided setup. Fit a new head on frozen pretrained features, then compare a real selective last-block fine-tune and held-out predictions.
 
     Predict → complete the short TODOs → change one control → inspect → explain → download.
 
@@ -55,6 +61,17 @@ def _(mo):
     prediction=mo.ui.text_area(label='Predict which parameter groups change in each route',full_width=True)
     mo.vstack([prediction,run_adaptation])
     return prediction, run_adaptation
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Read the weight audit
+    The backbone computes features $z=f_\theta(x)$; the new head computes scores $s=Wz+b$. If each image has $d$ features and the task has $c$ target classes, $W$ has shape $c\times d$, $b$ has length $c$ and the output has $c$ scores. Match their order to the target labels.
+
+    Frozen means $\Delta\theta_F=0$ for the frozen subset $F$. New inputs can still produce different activations. Head-only fitting updates the new head; selective tuning also permits the chosen last block to change. Read eligibility from the group configuration and actual changes from before/after deltas. A nonzero delta proves an update, not an improvement; held-out target results answer the second question.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -97,8 +114,21 @@ def _(
     if run_adaptation.value:
         try:adaptation_report=day2.adapt(target_head_classes(),selective_trainable_groups())
         except (ValueError,TypeError,KeyError) as _error:_message=str(_error)
-    mo.callout(_message,kind='warn') if _message else mo.callout('Complete head/classes and trainable groups, then fit.',kind='info') if adaptation_report is None else mo.vstack([mo.ui.table(adaptation_report['routes']),mo.md('```json\n'+__import__('json').dumps(adaptation_report,indent=2)+'\n```')])
+    mo.callout(_message,kind='warn') if _message else mo.callout('Complete head/classes and trainable groups, then fit.',kind='info') if adaptation_report is None else mo.vstack([mo.ui.table(adaptation_report['routes']),day2.adaptation_figure(adaptation_report),mo.ui.table(adaptation_report['validation_comparison']),mo.md('```json\n'+__import__('json').dumps(adaptation_report,indent=2)+'\n```')])
     return (adaptation_report,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    experiment_log=mo.ui.text_area(value="route | trainable groups/count | frozen delta | eligible delta | validation evidence\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
+    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
+    return (experiment_log,)
+
+
+@app.cell(hide_code=True)
+def _(display, experiment_log, mo):
+    display.download(mo,experiment_log.value,{'columns':"route | trainable groups/count | frozen delta | eligible delta | validation evidence"},'day2-block3-comparison-log',label='Download comparison log (baseline + changed runs)')
+    return
 
 
 @app.cell(hide_code=True)

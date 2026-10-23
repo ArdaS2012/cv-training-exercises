@@ -33,9 +33,10 @@ def segmentation_report(select_mask,overlap,index=0,class_id=1):
  if metrics is None:return None
  if set(metrics)!= {'iou','dice'} or any(not np.isfinite(v) or not 0<=v<=1 for v in metrics.values()):raise ValueError('Return finite iou and dice fractions in [0,1].')
  import matplotlib.pyplot as plt
- fig,axes=plt.subplots(1,4,figsize=(12,3),layout='constrained')
- for ax,(title,arr) in zip(axes,[('RGB',s['image']),('Day 1 cluster',s['cluster']),('U-Net semantic',s['semantic']),('Learned centers → instances',s['instance'])]):ax.imshow(arr,cmap='tab10' if arr.ndim==2 else None);ax.set_title(title);ax.axis('off')
- report=dict(scene=s['name'],class_id=class_id,metrics={k:float(v) for k,v in metrics.items()},instance_ids=np.unique(s['instance']).tolist(),reference_instance_count=int(s['reference_instance'].max()),scope='Authored geometric scenes; independently pretrained semantic/center U-Nets with supplied watershed. Not Mask R-CNN or natural-photo quality.')
+ fig,axes=plt.subplots(2,3,figsize=(12,7),layout='constrained')
+ panels=[('RGB',s['image']),('Reference semantic',s['reference_semantic']),('U-Net semantic',s['semantic']),('Day 1 cluster',s['cluster']),('Reference identities',s['reference_instance']),('Learned centers → instances',s['instance'])]
+ for ax,(title,arr) in zip(axes.flat,panels):ax.imshow(arr,cmap='tab10' if arr.ndim==2 else None);ax.set_title(title);ax.axis('off')
+ report=dict(scene=s['name'],class_id=class_id,metrics={k:float(v) for k,v in metrics.items()},instance_ids=np.unique(s['instance']).tolist(),predicted_instance_count=int((np.unique(s['instance'])>0).sum()),reference_instance_count=int(s['reference_instance'].max()),scope='Authored geometric scenes; independently pretrained semantic/center U-Nets with supplied watershed. Not Mask R-CNN or natural-photo quality.')
  return report,fig,s
 def pairs():
  d=np.load(ASSETS/'pairs.npz');model=load_checkpoint('siamese.pt',PairEncoder())
@@ -158,4 +159,4 @@ def adapt_package(config,epochs=40):
  package=io.BytesIO()
  with zipfile.ZipFile(package,'w',zipfile.ZIP_DEFLATED) as z:
   for file in path.iterdir():z.write(file,file.name)
- return dict(baseline_validation=baseline,adapted_validation=comparison,validation_count=len(va),test_count_unused=len(te),parameter_max_deltas=delta,trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),training_seconds=time.perf_counter()-start,reload_scores_max_difference=float(np.max(np.abs(np.array(pa['scores'])-pb['scores']))),request=dict(url=url,method='POST',json={'pixels':sample}),response=pc,http_status=status,invalid_request_status=invalid_status,invalid_request_response=invalid_response,reload_agreement=pa==pb==pc,config=cfg,package_files=sorted(p.name for p in path.iterdir()),scope='Local HTTP endpoint; no Hub/hosted deployment executed.'),package.getvalue()
+ return dict(baseline_validation=baseline,adapted_validation=comparison,validation_count=len(va),test_count_unused=len(te),parameter_max_deltas=delta,trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),training_seconds=time.perf_counter()-start,reload_scores_max_difference=float(np.max(np.abs(np.array(pa['scores'])-pb['scores']))),original_prediction=pa,reloaded_prediction=pb,request=dict(url=url,method='POST',json={'pixels':sample}),response=pc,http_status=status,invalid_request_status=invalid_status,invalid_request_response=invalid_response,reload_agreement=pa==pb==pc,config=cfg,package_files=sorted(p.name for p in path.iterdir()),scope='Local HTTP endpoint; no Hub/hosted deployment executed.'),package.getvalue()

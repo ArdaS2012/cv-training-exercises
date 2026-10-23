@@ -15,7 +15,7 @@ Open the supplied `03_transfer.py` editor on localhost:2720. Run online prefligh
 
 ## Exercise + breakout
 
-Follow the [15-minute group task](GROUP_TASK.md) after guided setup. It defines the required comparison, evidence and shared result. Keep the technical help below for the bounded TODOs.
+Follow the [30-minute group task](GROUP_TASK.md) after guided setup. It defines the required comparison, evidence and shared result. Keep the technical help below for the bounded TODOs.
 
 ## Submit/share
 
@@ -27,8 +27,12 @@ Check exact tensor shape, coordinate convention and normalization in the noteboo
 
 ## Course mapping
 
-CV Day 2, Block 3, guided setup plus a 15-minute exercise + breakout. The private trainer guide is not needed for the task. Model/data provenance is bundled under `cv_exercises/assets/day2/`.
+CV Day 2, Block 3, guided setup plus a 30-minute exercise + breakout. The private trainer guide is not needed for the task. Model/data provenance is bundled under `cv_exercises/assets/day2/`.
 
 ## Current teaching handoff
 
 CV Day 2, Block 3: actual slide **42 — Exercise: verify what fine-tunes** launches the combined exercise + breakout. Return to plenary at the agenda’s room end. The notebook and group task are self-contained; private trainer files are not required.
+
+## Investigation focus
+
+Adaptation audit: prove which weights learned. The head width follows target labels. Frozen means no parameter update, not identical activations. Fine-tuning selects a trainable subset; more changed weights do not guarantee better validation. Keep the task beside the output, preserve run A in the comparison log, and compare a controlled change before making your decision.

@@ -19,19 +19,23 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Exercise + breakout: your shared task
+    ## Hands-on investigation: your shared mission
 
-    **15 minutes in pairs after guided setup.** Use geometry, parameters and counterexamples to assess clustering rather than recognize an algorithm name.
+    **30 minutes in pairs.** Organize an unlabelled image collection: can your grouping rule survive a counterexample?
 
-    1. Choose curved data with standardization on. Predict one failure, complete the short estimator/assignment TODOs and inspect K-Means, hierarchical and DBSCAN outputs on the same points.
+    ### Prior-slide takeaways to use now
 
-    2. Keep all settings fixed except DBSCAN eps; compare 0.3 and 0.6. Record cluster membership/noise changes and use the dendrogram to explain one hierarchical merge.
+    Slides 9–14: distance depends on scale; K-Means uses centroids, linkage uses merges, DBSCAN uses density. Cluster IDs are not class names.
 
-    3. Recommend a method for this geometry, giving numerical/visual evidence and a failure risk. Check the supplied image-thumbnail view and explain why cluster IDs cannot be renamed as object classes without evidence.
+    1. Predict which method will cut across the curved shapes. Use curved data, K=2, single linkage, standardization on and min_samples=5; complete the estimator and assignment TODOs. Trace one assignment or merge on the plots.
 
-    **Bring back:** Three-method comparison, eps/noise comparison, one merge/centroid observation and an evidence-based recommendation.
+    2. Keep those rows/settings fixed. Compare DBSCAN eps=0.3 with 0.6. Log group count excluding noise, noise rows and one membership change; point to the affected area. Swap editor/checker at minute 15.
 
-    Swap editor/checker halfway. Record in the observation fields, save code and download findings. The complete task and setup are in this block’s `GROUP_TASK.md`. Prerequisite TODOs discussed in plenary belong to setup.
+    3. Challenge your choice: keep the chosen settings and switch to noisy data, then inspect image thumbnails. Does the rule still serve your goal? Defend a choice with the comparison, a counterexample and a limit; never rename IDs as object classes.
+
+    **Bring back:** An eps comparison log with counts and settings, one traced assignment/merge, a counterexample and a qualified grouping recommendation.
+
+    **Route:** 0–4 predict; 4–12 implement and trace; 12–22 compare (swap roles at 15); 22–27 challenge and decide; 27–30 explain, save and export. Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
     """)
     return
 
@@ -41,9 +45,9 @@ def _(mo):
     mo.md("""
     # Compare Three Clustering Methods
 
-    15-minute group task after guided setup. Compare K-Means, hierarchical clustering and DBSCAN on compact, curved and noisy geometries, then inspect grouped image thumbnails. Explain a centroid, a dendrogram cut and noise labels. Export one observation testing your room prediction.
+    30-minute investigation after guided setup. Compare K-Means, hierarchical clustering and DBSCAN on compact, curved and noisy geometries, then inspect grouped image thumbnails. Explain a centroid, a dendrogram cut and noise labels. Export one observation testing your room prediction.
 
-    Predict → complete the short TODOs → change one control → explain → download findings.
+    Inspect → predict → implement and trace → compare → challenge → explain and download evidence.
 
     Use the cell code control to open TODO cells. Edit only `# TODO` areas and run with Shift+Enter. Waiting messages are normal before completion. Save Python with Ctrl+S / Command+S; widget values need the findings download. Work in pairs and swap who edits.
     """)
@@ -106,17 +110,19 @@ def _(dataset, display, linkage_kind, methods, mo, np, raw, results, x):
     elif set(results)!=set(methods) or any(np.asarray(a).shape!=(len(x),) for a in results.values()):
         _view = mo.callout('Return one label per input row for each of the three named methods.',kind='warn')
     else:
+        _counts=[{'method':_name,'groups (excluding noise)':len(set(np.asarray(_labels).tolist())-{-1}),'noise rows':int(np.sum(np.asarray(_labels)==-1)),'total rows':len(_labels)} for _name,_labels in results.items()]
+        _summary=mo.ui.table(_counts,selection=None)
         if dataset.value=='images':
-            _view = mo.vstack([display.thumbnails(raw,results['K-Means']),mo.md('Rows are images. The first 12 thumbnails are fixed IDs; labels were never used to fit clusters.')])
+            _view = mo.vstack([_summary,display.thumbnails(raw,results['K-Means']),mo.md('Rows are images. The first 12 thumbnails are fixed IDs; labels were never used to fit clusters. Record what the thumbnails support before naming any group.')])
         else:
-            _view = mo.vstack([display.clustering_plot(x,results),display.dendrogram_plot(x,linkage_kind.value)])
+            _view = mo.vstack([_summary,display.clustering_plot(x,results),display.dendrogram_plot(x,linkage_kind.value),mo.md('Locate a changed group/noise point, then log count and settings before changing eps. Group colors/IDs can permute; compare membership.')])
     _view
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    findings=mo.ui.text_area(label='Findings: centroids / merge heights / noise; one failed prediction and scaling consequence',full_width=True)
+    findings=mo.ui.text_area(value='Trial | dataset | K/linkage/scale/min_samples | eps | groups excluding noise | noise rows | located change\nBaseline | curved | 2/single/on/5 | 0.3 | | |\nComparison | curved | unchanged | 0.6 | | |\nCounterexample | noisy | chosen settings | | | |\nDecision and evidence:\nMechanism and limitation:',label="Evidence log — keep every trial, mechanism and decision",full_width=True)
     mo.vstack([findings])
     return (findings,)
 
