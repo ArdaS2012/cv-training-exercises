@@ -3,9 +3,9 @@
 
 ## Exercise + breakout
 
-Follow the [30-minute group task](GROUP_TASK.md) after guided setup.
+Follow the [group task (around 30 minutes)](GROUP_TASK.md) after guided setup.
 
-CV Day 3 Block 4 · guided setup, then a 30-minute exercise + breakout.
+CV Day 3 Block 4 · guided setup, then an exercise + breakout.
 
 Run actual CLIP text inference and SAM prompt decoding with official pinned checkpoints and cached matching image encodings.
 
@@ -33,3 +33,8 @@ CV Day 3, Block 4: actual slide **48 — Exercise: isolate a vision prompt** lau
 ## Investigation focus
 
 Prompt repair: words and points do different jobs. CLIP compares an image with text candidates; normalized scores depend on that set. SAM accepts spatial prompts and returns masks. Prompt edits change inference inputs, not weights. Keep the task beside the output, preserve run A in the comparison log, and compare a controlled change before making your decision.
+
+
+## Inputs and API help
+
+Read the [function input/output contracts and official API references](TASK_API.md), also displayed immediately beside the notebook TODOs. They define every argument, data field, shape and convention; no private trainer material or inferred field names are needed.

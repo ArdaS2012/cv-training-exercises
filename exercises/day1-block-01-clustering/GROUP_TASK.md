@@ -1,6 +1,6 @@
 # Exercise: challenge a clustering choice
 
-**Exercise + breakout · CV Day 1 Block 1 · 30 minutes in pairs**
+**Exercise + breakout · CV Day 1 Block 1 · around 30 minutes in pairs**
 
 ## Your mission
 
@@ -16,21 +16,17 @@ Why this helps: explain the mechanism before trusting a colorful output. Your pa
 
 Use [shared setup](../../README.md); launch checks and any warming happen before class. Start from the repository root with `uv run --locked python start.py --block 1`. Locate the supplied input, controls, TODOs and results; the conceptual implementation and investigation below belong to the room.
 
+## Definitions before coding
+
+The notebook displays the exact types, shapes, field meanings and return contracts beside every TODO. The same [input/output definitions and API references](README.md#todo-input-and-output-reference) are available here locally. Read those definitions before editing; you do not need to inspect private files or guess the data structure.
+
 ## Investigate together
 
 1. Predict which method will cut across the curved shapes. Use curved data, K=2, single linkage, standardization on and min_samples=5; complete the estimator and assignment TODOs. Trace one assignment or merge on the plots.
 
-2. Keep those rows/settings fixed. Compare DBSCAN eps=0.3 with 0.6. Log group count excluding noise, noise rows and one membership change; point to the affected area. Swap editor/checker at minute 15.
+2. Keep those rows/settings fixed. Compare DBSCAN eps=0.3 with 0.6. Log group count excluding noise, noise rows and one membership change; point to the affected area. Swap editor/checker.
 
 3. Challenge your choice: keep the chosen settings and switch to noisy data, then inspect image thumbnails. Does the rule still serve your goal? Defend a choice with the comparison, a counterexample and a limit; never rename IDs as object classes.
-
-## Use the 30 minutes purposefully
-
-- **0–4:** Inspect the input, choose the goal and write a prediction before running.
-- **4–12:** Complete the small concept TODOs; trace one input through your code and fix shape/value mistakes together.
-- **12–22:** Run the controlled comparison, record each result before changing controls, and swap editor/checker at minute 15.
-- **22–27:** Test the counterexample/changed condition; explain the mechanism and decide.
-- **27–30:** Both partners rehearse a 45-second evidence-based explanation; save code and download findings.
 
 ## Bring back
 

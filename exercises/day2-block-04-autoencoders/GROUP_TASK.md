@@ -1,8 +1,8 @@
 # Restoration lab: cleaner pixels or lost detail?
 
-**Exercise + breakout · CV Day 2 Block 4 · 30 minutes in pairs**
+**Exercise + breakout · CV Day 2 Block 4 · around 30 minutes in pairs**
 
-Your job is to produce a defensible decision from the actual outputs, including a result that challenges your first guess. One partner edits; the other checks controls, arithmetic and visual evidence. Swap at minute 15.
+Your job is to produce a defensible decision from the actual outputs, including a result that challenges your first guess. One partner edits; the other checks controls, arithmetic and visual evidence. Swap roles during the investigation.
 
 ## Keep these slide takeaways beside your experiment
 
@@ -32,8 +32,9 @@ Keep a short comparison log with columns **row | noise | width/objective | clean
 
 Bring one prediction, measured comparison, marked visual example or traced response, a decision and one limitation. Both partners must explain why the evidence supports it.
 
-## Work within the timebox
-
-0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
-
 If blocked, ask through the trainer’s chat/room-visit route. Use the working partner’s device if needed. Honest unchanged or worse outputs count when explained; label a supplied measured fallback instead of claiming fresh inference.
+
+
+## Inputs and API help
+
+Read the [function input/output contracts and official API references](TASK_API.md), also displayed immediately beside the notebook TODOs. They define every argument, data field, shape and convention; no private trainer material or inferred field names are needed.

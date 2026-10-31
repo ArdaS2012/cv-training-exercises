@@ -22,7 +22,7 @@ def _(mo):
     mo.md("""
     ## Mask detective: good overlap, wrong object count?
 
-    **30 minutes in pairs.** Semantic masks label classes; instance masks identify objects. U-Net skips preserve spatial detail. IoU/Dice compare aligned regions; class overlap alone cannot certify object count.
+    **Around 30 minutes in pairs.** Semantic masks label classes; instance masks identify objects. U-Net skips preserve spatial detail. IoU/Dice compare aligned regions; class overlap alone cannot certify object count.
 
     ### Investigate, do not just run
 
@@ -37,8 +37,6 @@ def _(mo):
     5. Decide whether semantic or instance output is enough for counting individual shapes. Cite overlap AND identity evidence; explain why these authored scenes cannot establish performance on real clinical or industrial images.
 
     **Evidence log:** scene | selected class | IoU | Dice | reference/predicted identities | boundary evidence. Save a run before changing controls. Export both the current findings and your comparison log.
-
-    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
 
@@ -48,7 +46,7 @@ def _(mo):
     mo.md("""
     # Compare Semantic and Instance Masks
 
-    30-minute investigation after guided setup. Run supplied pretrained tiny U-Nets on held-out authored scenes; compare semantic classes, learned instance identities and the retained Day1 cluster mask.
+    Investigation after guided setup. Run supplied pretrained tiny U-Nets on held-out authored scenes; compare semantic classes, learned instance identities and the retained Day1 cluster mask.
 
     Predict → complete short TODOs → change one setting → inspect → explain → download.
 
@@ -77,6 +75,10 @@ def _(mo):
     return
 
 
+
+
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
@@ -87,6 +89,34 @@ def _(mo):
     Inspect all three output meanings. Download semantic/instance overlays and record a touching-object failure; retain the exact Day1 scene as a separate domain comparison.
     """)
     return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Function inputs and API reference
+
+    ### TODO 1: `select_class(labels, class_id)`
+
+    | Input | Definition and guarantees |
+    |---|---|
+    | `labels` | NumPy integer array of shape `(H, W)`, currently `(32, 48)`. Each entry is a **semantic class ID** for one pixel, not a probability/channel vector. Axis 0 is row (y), axis 1 column (x). The current IDs are `0` background, `1` warm shape, `2` cool shape. |
+    | `class_id` | Python integer from the semantic-class control: `0`, `1` or `2`. It names the region to inspect. |
+
+    Return a NumPy Boolean array with the **same shape and pixel alignment**; `True` means that pixel belongs to the requested class, `False` means it does not. If that class is absent, the mask is all `False`. Example input structure: `labels = [[0, 1, 2], [1, 0, 2]]` as an integer array, with `class_id = 1`. This is only a format example; do not assume a particular scene. Do not mutate `labels` or replace semantic IDs by instance IDs.
+
+    ### TODO 2: `overlap(a, b)`
+
+    `a` and `b` are same-shaped NumPy **Boolean** arrays `(H, W)`, on the same image grid and for the same class. In the prepared call, `a` is your prediction mask and `b` the reference. `True` denotes included pixels; numeric label IDs and RGB values are not passed to this function.
+
+    Return a Python dictionary with exactly `iou` and `dice` as string keys, mapped to finite scalar floats in `[0, 1]`. Use the definitions in **Read labels, regions and identities separately** above. The vertical bars in those equations mean **number of included pixels**, not a vector norm. Both-empty masks return 1 for both metrics; exactly one empty mask returns 0 for both. Keep input masks unchanged and return scalars, not per-pixel maps or percentages.
+
+    **API vocabulary:** comparison of a NumPy array with a scalar is elementwise and returns a Boolean array. `np.logical_and` and `np.logical_or` combine Boolean membership at matching positions; `np.count_nonzero` counts nonzero/True entries. Python's scalar `and`/`or` do not perform these array operations. Choose your own implementation of the stated metric definitions.
+
+    **Official references:** [NumPy comparisons](https://numpy.org/doc/2.2/reference/generated/numpy.equal.html), [logical_and](https://numpy.org/doc/2.2/reference/generated/numpy.logical_and.html), [logical_or](https://numpy.org/doc/2.2/reference/generated/numpy.logical_or.html), [count_nonzero](https://numpy.org/doc/2.2/reference/generated/numpy.count_nonzero.html).
+    """)
+    return
+
 
 
 @app.cell

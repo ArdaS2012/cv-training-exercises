@@ -21,7 +21,7 @@ def _(mo):
     mo.md("""
     ## Hands-on investigation: your shared mission
 
-    **30 minutes in pairs.** Organize an unlabelled image collection: can your grouping rule survive a counterexample?
+    **Around 30 minutes in pairs.** Organize an unlabelled image collection: can your grouping rule survive a counterexample?
 
     ### Prior-slide takeaways to use now
 
@@ -29,13 +29,13 @@ def _(mo):
 
     1. Predict which method will cut across the curved shapes. Use curved data, K=2, single linkage, standardization on and min_samples=5; complete the estimator and assignment TODOs. Trace one assignment or merge on the plots.
 
-    2. Keep those rows/settings fixed. Compare DBSCAN eps=0.3 with 0.6. Log group count excluding noise, noise rows and one membership change; point to the affected area. Swap editor/checker at minute 15.
+    2. Keep those rows/settings fixed. Compare DBSCAN eps=0.3 with 0.6. Log group count excluding noise, noise rows and one membership change; point to the affected area. Swap editor/checker.
 
     3. Challenge your choice: keep the chosen settings and switch to noisy data, then inspect image thumbnails. Does the rule still serve your goal? Defend a choice with the comparison, a counterexample and a limit; never rename IDs as object classes.
 
     **Bring back:** An eps comparison log with counts and settings, one traced assignment/merge, a counterexample and a qualified grouping recommendation.
 
-    **Route:** 0–4 predict; 4–12 implement and trace; 12–22 compare (swap roles at 15); 22–27 challenge and decide; 27–30 explain, save and export. Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
+    Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
     """)
     return
 
@@ -45,7 +45,7 @@ def _(mo):
     mo.md("""
     # Compare Three Clustering Methods
 
-    30-minute investigation after guided setup. Compare K-Means, hierarchical clustering and DBSCAN on compact, curved and noisy geometries, then inspect grouped image thumbnails. Explain a centroid, a dendrogram cut and noise labels. Export one observation testing your room prediction.
+    Investigation after guided setup. Compare K-Means, hierarchical clustering and DBSCAN on compact, curved and noisy geometries, then inspect grouped image thumbnails. Explain a centroid, a dendrogram cut and noise labels. Export one observation testing your room prediction.
 
     Inspect → predict → implement and trace → compare → challenge → explain and download evidence.
 
@@ -69,8 +69,34 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     prediction=mo.ui.text_area(label='Prediction: which method suits this geometry, and why?',full_width=True)
-    mo.vstack([mo.md("""## TODO: configure three estimators and assign their input rows
-    Use the supplied constructors KMeans, AgglomerativeClustering and DBSCAN. KMeans takes n_clusters, random_state=42 and n_init=10. AgglomerativeClustering takes n_clusters and linkage. DBSCAN takes eps and min_samples. Then use each estimator’s fit_predict method on x. Keep dictionary keys unchanged."""),prediction])
+    mo.vstack([mo.md("""## TODO 1 — estimator inputs and return contract
+
+    An **estimator** is a configured scikit-learn object; constructing it does not yet fit data. The three constructors are imported in the editable cell. Controls are marimo widgets: their current Python setting is in `.value`.
+
+    | Available input | Definition |
+    |---|---|
+    | `k_clusters` | Slider; `.value` is an integer from 2 to 6. `n_clusters` is the requested number of groups for K-Means and the hierarchical cut. |
+    | `linkage_kind` | Dropdown; `.value` is `'single'`, `'complete'`, `'average'` or `'ward'`. `linkage` selects the hierarchical merge-distance rule. |
+    | `epsilon` | Slider; `.value` is a float from 0.1 to 1.5. `eps` is DBSCAN's neighborhood radius in the current feature-distance units. |
+    | `min_points` | Slider; `.value` is an integer from 2 to 12. `min_samples` is DBSCAN's minimum neighborhood count, including the point itself. |
+    | `KMeans`, `AgglomerativeClustering`, `DBSCAN` | Imported classes. Their constructor keyword arguments configure behavior; an instance exposes `fit_predict(X)`. |
+
+    Return `methods`: a dictionary with exactly the string keys `'K-Means'`, `'Hierarchical'`, `'DBSCAN'`, each holding its configured estimator, not labels or class names. For repeatability, use `random_state=42` (random initialization seed) and `n_init=10` (number of initializations) for K-Means. The other two estimators have no seed parameter here. Keep their default Euclidean distance. Configure the controls indicated above; no fitting belongs to TODO 1.
+
+    ## TODO 2 — data inputs and return contract
+
+    | Available input | Definition |
+    |---|---|
+    | `methods` | The TODO 1 dictionary, once all three placeholders have been replaced. Dictionary keys name methods; values are estimator objects. |
+    | `x` | Finite floating NumPy array, shape `(n, d)`: row = one sample, column = one feature. `compact`/`curved`: `(150, 2)` coordinate rows; `noisy`: `(154, 2)`; `images`: `(300, 64)`, one row per flattened 8×8 digit image. There is no label column. |
+
+    When **Standardize features** is on, supplied preprocessing centers/scales each feature; `eps` then uses standardized units. With it off, geometric coordinates retain their authored units and image intensities are in `[0, 1]`. All methods must receive these same current rows in the same order. For a shape-only example, a `(4, 2)` input represents four samples with two features each.
+
+    `fit_predict(X)` fits an estimator on the full numeric matrix and returns an integer array of shape `(n,)`, with entry `i` identifying the group assigned to input row `i`. No target `y` is needed. DBSCAN uses `-1` for noise; other group IDs are arbitrary nonnegative integers. Return `results`, a dictionary with the same three keys and one such label array per method. Preserve sample order. The starter's `None` values mean unfinished work, not a valid final label array.
+
+    ### API reference
+
+    Official scikit-learn 1.7 docs: [KMeans constructor and fit_predict](https://scikit-learn.org/1.7/modules/generated/sklearn.cluster.KMeans.html), [AgglomerativeClustering](https://scikit-learn.org/1.7/modules/generated/sklearn.cluster.AgglomerativeClustering.html), [DBSCAN](https://scikit-learn.org/1.7/modules/generated/sklearn.cluster.DBSCAN.html). These document the interfaces; choosing and combining the calls is your task."""),prediction])
     return (prediction,)
 
 

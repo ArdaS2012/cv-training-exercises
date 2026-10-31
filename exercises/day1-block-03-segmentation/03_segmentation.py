@@ -21,7 +21,7 @@ def _(mo):
     mo.md("""
     ## Hands-on investigation: your shared mission
 
-    **30 minutes in pairs.** Build a region proposal for an image tool: can it separate distant red regions without inventing object labels?
+    **Around 30 minutes in pairs.** Build a region proposal for an image tool: can it separate distant red regions without inventing object labels?
 
     ### Prior-slide takeaways to use now
 
@@ -29,13 +29,13 @@ def _(mo):
 
     1. Locate the two red regions and predict whether they will share a group. Complete the feature and H×W reshape TODOs. Use K=3 and seed 42; explain what one feature row represents before running.
 
-    2. Hold image, K and seed fixed; compare position weights 0, 0.5 and 1.0. Log whether probes (row18,col12) and (row10,col36) share a group, and locate a boundary that moves or remains fixed. Swap roles at minute 15. Compare membership, not the numeric value of a cluster ID.
+    2. Hold image, K and seed fixed; compare position weights 0, 0.5 and 1.0. Log whether probes (row18,col12) and (row10,col36) share a group, and locate a boundary that moves or remains fixed. Swap roles. Compare membership, not the numeric value of a cluster ID.
 
     3. Choose a weight for a declared region-selection purpose. Use the lighting gradient or a split background as a counterexample to your own choice. State what annotation would be needed to call the regions objects; retain the masks for Day 3.
 
     **Bring back:** Three weight trials with fixed settings, a probe/boundary comparison, chosen mask and a concrete semantic/instance limitation.
 
-    **Route:** 0–4 predict; 4–12 implement and trace; 12–22 compare (swap roles at 15); 22–27 challenge and decide; 27–30 explain, save and export. Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
+    Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
     """)
     return
 
@@ -45,7 +45,7 @@ def _(mo):
     mo.md("""
     # Segment a Small Image
 
-    30-minute investigation after guided setup. Compare color-only clustering with color plus scaled position on the supplied authored RGB scene. Export two masks. Explain a useful partition, lighting sensitivity and why a cluster does not establish object meaning or object identity.
+    Investigation after guided setup. Compare color-only clustering with color plus scaled position on the supplied authored RGB scene. Export two masks. Explain a useful partition, lighting sensitivity and why a cluster does not establish object meaning or object identity.
 
     Inspect → predict → implement and trace → compare → challenge → explain and download evidence.
 
@@ -72,8 +72,32 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo, prediction):
-    mo.vstack([prediction,mo.md("""## TODO: pixels → feature rows → label image
-    color is 1536×3 with values in 0..1; position is 1536×2 with normalized row/column coordinates. Build a 1536×5 array by joining color with weighted position using np.column_stack. Then reshape the fitted 1536 labels into the image height and width, without a color channel. Color-only labels and fitting plumbing are supplied.""")])
+    mo.vstack([prediction,mo.md("""## TODO 1 — pixel-feature inputs and return contract
+
+    `np` is NumPy, already imported. Array shapes use `(rows, columns)`.
+
+    | Available input | Definition |
+    |---|---|
+    | `color` | Float NumPy array `(1536, 3)`. Each row is one pixel; columns are red, green, blue intensities in that order, each in `[0, 1]`. |
+    | `position` | Float NumPy array `(1536, 2)`. For that same pixel, columns are normalized **row**, then **column**: `row/(H-1)` and `column/(W-1)`, in `[0, 1]`. Origin is top left. |
+    | `spatial_weight` | Marimo slider object; `.value` is a float from 0 to 2. It is the relative weight of position features compared with color, not a cluster count or a pixel coordinate. |
+
+    Both arrays describe the authored scene with height `H=32`, width `W=48`. Row order is C/row-major: left to right, then top to bottom. Flat row `i = row*W + column` refers to the same pixel in both arrays. For example, row 49 corresponds to image coordinate `(1, 1)`; positions there are `(1/31, 1/47)`. Do not sort or shuffle pixels.
+
+    Return `spatial_features`, a finite float array `(1536, 5)`. Its five columns describe red, green, blue, weighted normalized row and weighted normalized column, in that order. A weight of zero makes position contribute zero distance; one keeps its normalized scale. K-Means fitting and a color-only baseline are already supplied.
+
+    ## TODO 2 — label-image inputs and return contract
+
+    | Available input | Definition |
+    |---|---|
+    | `rgb` | Float NumPy array `(H, W, 3)`, here `(32, 48, 3)`; dimensions are image rows, columns, RGB channels. `.shape` reports those sizes. |
+    | `spatial_labels` | `None` until TODO 1 is ready; afterwards an integer NumPy array `(H*W,)`, here `(1536,)`. Entry `i` is K-Means' cluster ID for pixel row `i` of the feature array. IDs range from 0 to `K-1`, where the supplied cluster-count slider sets `K`. |
+
+    Return `spatial_mask=None` while labels are unavailable; otherwise return an integer array `(H, W)`, with label `i` restored to its original pixel coordinate. A mask contains one ID per pixel, with **no color-channel axis**. For a shape-only example, labels for a 2×3 image are a six-entry vector whose first three entries belong to the top row. Equal IDs indicate common membership within one fitted mask; IDs do not name semantic objects or stay comparable across separate fits.
+
+    ### API reference
+
+    NumPy 2.2: [column_stack](https://numpy.org/doc/2.2/reference/generated/numpy.column_stack.html) accepts a sequence of equal-length/equal-row arrays and joins their columns; [reshape](https://numpy.org/doc/2.2/reference/generated/numpy.reshape.html) changes shape without changing the number of entries, with C/row-major ordering by default. [ndarray shape](https://numpy.org/doc/2.2/reference/generated/numpy.ndarray.shape.html) returns the dimension-size tuple. Choosing how these interfaces express each required output is your task.""")])
     return
 
 

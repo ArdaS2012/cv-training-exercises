@@ -21,7 +21,7 @@ def _(mo):
     mo.md("""
     ## Hands-on investigation: your shared mission
 
-    **30 minutes in pairs.** Audit a learning claim: did gradient updates improve this classifier, and what do the images actually show?
+    **Around 30 minutes in pairs.** Audit a learning claim: did gradient updates improve this classifier, and what do the images actually show?
 
     ### Prior-slide takeaways to use now
 
@@ -29,13 +29,13 @@ def _(mo):
 
     1. Predict the learning curves and manually check one target-probability loss. Implement ReLU and mean cross-entropy; trace one negative activation and one target probability. Keep the supplied matching derivatives and fixed split unchanged.
 
-    2. At rate 0.5 compare 0 and 80 updates from the same initialization. Log final training loss, validation accuracy and the same held-out image ID/prediction; inspect its actual pixels. Swap roles at minute 15 and explain one changed or unchanged prediction.
+    2. At rate 0.5 compare 0 and 80 updates from the same initialization. Log final training loss, validation accuracy and the same held-out image ID/prediction; inspect its actual pixels. Swap roles and explain one changed or unchanged prediction.
 
     3. Repeat 80 updates changing only rate to 2.0. Compare the curves and held-out image; accept deterioration as evidence. Recommend a next training experiment and name a population/condition your current validation cannot establish.
 
     **Bring back:** Three controlled run rows and curves, one inspected held-out image, an explained learning claim and a next-test limitation.
 
-    **Route:** 0–4 predict; 4–12 implement and trace; 12–22 compare (swap roles at 15); 22–27 challenge and decide; 27–30 explain, save and export. Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
+    Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
     """)
     return
 
@@ -45,7 +45,7 @@ def _(mo):
     mo.md("""
     # Train a Tiny Neural Classifier
 
-    30-minute investigation after guided setup. Complete a nonlinear activation and classification loss in a supplied two-layer model. Compare loss before and after real CPU gradient updates. Inspect held-out validation predictions; explain why low training loss alone does not demonstrate generalization. The final test set stays untouched.
+    Investigation after guided setup. Complete a nonlinear activation and classification loss in a supplied two-layer model. Compare loss before and after real CPU gradient updates. Inspect held-out validation predictions; explain why low training loss alone does not demonstrate generalization. The final test set stays untouched.
 
     Inspect → predict → implement and trace → compare → challenge → explain and download evidence.
 
@@ -67,8 +67,26 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo, prediction):
-    mo.vstack([prediction,mo.md("""## TODO: ReLU and mean target-class cross-entropy
-    Write activation(z) for an array of any shape: return elementwise max of z and zero. Write mean_loss(probabilities, labels) for n×10 probabilities and n integer class IDs: select each row’s target probability, clip below at 1e-12, take negative natural log, then average. np.maximum, np.arange, np.clip, np.log and np.mean are available. The 64→24→10 model, softmax, fixed split and gradient plumbing are supplied; derivatives assume these exact definitions.""")])
+    mo.vstack([prediction,mo.md("""## TODO 1 — activation(z)
+
+    `np` is NumPy, already imported. `z` is a finite floating NumPy array of pre-activation values; signs may be positive, zero or negative. It has no probability or pixel-intensity constraint. The supplied model passes arrays `(n, 24)`, one row per image and one column per hidden unit; the function should preserve **any input array shape**.
+
+    ReLU is defined elementwise: negative inputs become zero, and nonnegative inputs retain their value. Return `activated`, a finite numeric NumPy array with exactly `z.shape`. For a shape-only example, an input `(2, 3)` must still return `(2, 3)`; do not reduce over a batch or choose a predicted class. Zero remains zero.
+
+    ## TODO 2 — mean_loss(probabilities, labels)
+
+    | Function input | Definition |
+    |---|---|
+    | `probabilities` | Float NumPy array `(n, c)`, with `n>0` samples and `c` classes. Entry `[i, j]` is the model probability that sample `i` belongs to class ID `j`. Values are in `[0, 1]`, and each row sums to 1 (up to rounding). These are already softmax probabilities, not logits. The digit task has `c=10`; do not hard-code that column count. |
+    | `labels` | Integer NumPy array `(n,)`. Entry `i` is the true class ID for probability row `i`, from `0` through `c-1`. It is neither a one-hot matrix nor a predicted class. Rows are aligned and must stay in order. |
+
+    The supplied training batch has `n=180` and classes 0–9; the function should also work on smaller nonempty batches. For example, with a shape `(2, 3)` matrix and `labels=[2, 0]`, the true class for the first row is class 2 and for the second row class 0. This establishes the input meaning, not implementation syntax.
+
+    Cross-entropy here means the mean negative **natural** log of the true-class probability over samples. For numerical safety, probabilities below `1e-12` count as `1e-12` when computing this loss; zero probabilities must therefore give a finite result. Return `loss`, one finite nonnegative numeric scalar in natural-log units, rather than one value per row. The supplied code guarantees nonempty, valid inputs; no new validation, softmax, normalization, gradient or data split is required. The prepared derivatives assume these ReLU/cross-entropy definitions. `None` is only the unfinished state.
+
+    ### API reference
+
+    NumPy 2.2: [maximum](https://numpy.org/doc/2.2/reference/generated/numpy.maximum.html) compares elements with broadcasting; [integer-array indexing](https://numpy.org/doc/2.2/user/basics.indexing.html#integer-array-indexing) pairs row/column index arrays elementwise; [arange](https://numpy.org/doc/2.2/reference/generated/numpy.arange.html) supplies integer ranges with an excluded stop; [clip](https://numpy.org/doc/2.2/reference/generated/numpy.clip.html) bounds values; [log](https://numpy.org/doc/2.2/reference/generated/numpy.log.html) is the natural logarithm; [mean](https://numpy.org/doc/2.2/reference/generated/numpy.mean.html) reduces an array to its average when no axis is specified.""")])
     return
 
 

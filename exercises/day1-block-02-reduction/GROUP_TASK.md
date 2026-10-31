@@ -1,6 +1,6 @@
 # Exercise: defend a projection
 
-**Exercise + breakout · CV Day 1 Block 2 · 30 minutes in pairs**
+**Exercise + breakout · CV Day 1 Block 2 · around 30 minutes in pairs**
 
 ## Your mission
 
@@ -16,21 +16,17 @@ Why this helps: explain the mechanism before trusting a colorful output. Your pa
 
 Use [shared setup](../../README.md); launch checks and any warming happen before class. Start from the repository root with `uv run --locked python start.py --block 2`. Locate the supplied input, controls, TODOs and results; the conceptual implementation and investigation below belong to the room.
 
+## Definitions before coding
+
+The notebook displays the exact types, shapes, field meanings and return contracts beside every TODO. The same [input/output definitions and API references](README.md#todo-input-and-output-reference) are available here locally. Read those definitions before editing; you do not need to inspect private files or guess the data structure.
+
 ## Investigate together
 
 1. Choose one visible detail in input row 0 that must survive compression; predict the smallest acceptable rank. Complete the three PCA expressions, checking 300×64 → 300×k → 300×64 shapes. Explain why the mean must be restored.
 
-2. Use the identical rows at k=1, 8 and 32. Log retained variance, MSE and whether that detail survives; save each run. Swap roles at minute 15 and choose the smallest tested rank meeting your declared goal, even when its plot looks less attractive.
+2. Use the identical rows at k=1, 8 and 32. Log retained variance, MSE and whether that detail survives; save each run. Swap roles and choose the smallest tested rank meeting your declared goal, even when its plot looks less attractive.
 
 3. Run the supplied nonlinear views at neighbor setting 5 and 30 while keeping rows/seed fixed. Track a recognizable labelled region and describe what changed. Challenge a class-separation claim with evidence; explain why perplexity and UMAP neighbor count are different controls.
-
-## Use the 30 minutes purposefully
-
-- **0–4:** Inspect the input, choose the goal and write a prediction before running.
-- **4–12:** Complete the small concept TODOs; trace one input through your code and fix shape/value mistakes together.
-- **12–22:** Run the controlled comparison, record each result before changing controls, and swap editor/checker at minute 15.
-- **22–27:** Test the counterexample/changed condition; explain the mechanism and decide.
-- **27–30:** Both partners rehearse a 45-second evidence-based explanation; save code and download findings.
 
 ## Bring back
 

@@ -20,7 +20,7 @@ def _(mo):
     mo.md("""
     ## Restoration lab: cleaner pixels or lost detail?
 
-    **30 minutes in pairs.** Encoder → latent code → decoder reconstructs pixels. MSE averages squared errors in matching units. Denoising uses a clean target. Low average error can hide a lost stroke; checkpoint comparisons are descriptive.
+    **Around 30 minutes in pairs.** Encoder → latent code → decoder reconstructs pixels. MSE averages squared errors in matching units. Denoising uses a clean target. Low average error can hide a lost stroke; checkpoint comparisons are descriptive.
 
     ### Investigate, do not just run
 
@@ -35,10 +35,12 @@ def _(mo):
     5. Choose a checkpoint for preserving the selected detail under noise. Defend with both measured error and visible evidence, including any disagreement. Explain why different training histories prevent a pure causal claim about latent width.
 
     **Evidence log:** row | noise | width/objective | clean-target MSE | preserved/lost detail. Save a run before changing controls. Export both the current findings and your comparison log.
-
-    0–4 min: read the takeaways, inspect inputs and predict. 4–12: implement the bounded TODOs and inspect a real result. 12–22: compare controlled runs; swap editor/checker at minute 15. 22–27: diagnose a stress case and choose. 27–30: agree, save and export evidence.
     """)
     return
+
+
+
+
 
 
 @app.cell(hide_code=True)
@@ -46,7 +48,7 @@ def _(mo):
     mo.md("""
     # Inspect Compression and Denoising
 
-    30-minute investigation after guided setup. Compare genuine autoencoder checkpoints at two bottleneck widths, fixed-noise reconstructions, per-pixel errors and lost detail.
+    Investigation after guided setup. Compare genuine autoencoder checkpoints at two bottleneck widths, fixed-noise reconstructions, per-pixel errors and lost detail.
 
     Predict → complete the short TODOs → change one control → inspect → explain → download.
 
@@ -85,6 +87,34 @@ def _(mo):
     Compare latent widths 4/16 on the same image and the same seeded corruption. Four genuine pretrained checkpoints are supplied: clean and denoising objectives at both widths. Denoisers learned noisy-input/clean-target reconstruction with σ=0.25. Changing the inference noise does not retrain them. Export originals/reconstructions and note one lost detail or overly smoothed region. The latent coordinate ratio is not a file-compression claim.
     """)
     return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Function inputs and API reference
+
+    ### TODO 1: `reconstruct(model, noisy)`
+
+    | Input | Definition and guarantees |
+    |---|---|
+    | `model` | Supplied pretrained PyTorch autoencoder (`nn.Module`) in evaluation mode. Its callable `encoder` accepts shape `(1, 64)` and emits shape `(1, k)`; its callable `decoder` accepts `(1, k)` and emits `(1, 64)`. The selected latent width `k` is `4` or `16`. These are attributes, not dictionary keys. |
+    | `noisy` | CPU `torch.Tensor`, floating-point shape `(1, 64)`: one noisy 8×8 grayscale image flattened in row-major order. Axis 0 is batch (one image), axis 1 is pixel position. Values have been clipped to `[0, 1]`. |
+
+    Return a CPU `torch.Tensor` with shape `(1, 64)`, containing the model's reconstructed normalized intensities. Preserve its batch axis. The prepared runner already disables gradient recording and loads weights; no fitting, image loading or tensor conversion is required. A latent code is the compact `k`-coordinate representation; it is not a class label.
+
+    **Calling a supplied module:** a module is a callable object. In generic notation, `layer(values)` invokes its forward computation and returns a tensor; a method such as `.parameters()` has a different purpose. The task is to connect the documented model interfaces; no solution expression is supplied.
+
+    ### TODO 2: `pixel_mse(clean, reconstruction)`
+
+    Both arguments are finite floating-point **NumPy arrays**, shape `(1, 64)`, with corresponding pixels in the same row-major order and normalized intensity units `[0, 1]`. `clean` is the reference before corruption; `reconstruction` is one model output, not the noisy input. Return one finite nonnegative numeric scalar: mean squared pixel difference across **all** entries. Its units are normalized intensity squared. The mean, rather than a sum, makes this a per-pixel measure. Identical arrays have error zero; do not change either input.
+
+    **API vocabulary:** array subtraction and exponentiation are coordinatewise for matching arrays. `np.mean(a)` reduces all entries when `axis` is omitted; an explicit axis reduces only that dimension. `np` is already imported in the editable cell. The displayed error maps retain pixel positions, while this function returns a scalar summary.
+
+    **Official references:** [PyTorch 2.8 Module calls](https://docs.pytorch.org/docs/2.8/generated/torch.nn.Module.html), [NumPy mean](https://numpy.org/doc/2.2/reference/generated/numpy.mean.html), [NumPy array arithmetic](https://numpy.org/doc/2.2/user/quickstart.html#basic-operations).
+    """)
+    return
+
 
 
 @app.cell

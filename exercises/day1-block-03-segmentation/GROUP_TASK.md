@@ -1,6 +1,6 @@
 # Exercise: test a pixel partition
 
-**Exercise + breakout · CV Day 1 Block 3 · 30 minutes in pairs**
+**Exercise + breakout · CV Day 1 Block 3 · around 30 minutes in pairs**
 
 ## Your mission
 
@@ -16,21 +16,17 @@ Why this helps: explain the mechanism before trusting a colorful output. Your pa
 
 Use [shared setup](../../README.md); launch checks and any warming happen before class. Start from the repository root with `uv run --locked python start.py --block 3`. Locate the supplied input, controls, TODOs and results; the conceptual implementation and investigation below belong to the room.
 
+## Definitions before coding
+
+The notebook displays the exact types, shapes, field meanings and return contracts beside every TODO. The same [input/output definitions and API references](README.md#todo-input-and-output-reference) are available here locally. Read those definitions before editing; you do not need to inspect private files or guess the data structure.
+
 ## Investigate together
 
 1. Locate the two red regions and predict whether they will share a group. Complete the feature and H×W reshape TODOs. Use K=3 and seed 42; explain what one feature row represents before running.
 
-2. Hold image, K and seed fixed; compare position weights 0, 0.5 and 1.0. Log whether probes (row18,col12) and (row10,col36) share a group, and locate a boundary that moves or remains fixed. Swap roles at minute 15. Compare membership, not the numeric value of a cluster ID.
+2. Hold image, K and seed fixed; compare position weights 0, 0.5 and 1.0. Log whether probes (row18,col12) and (row10,col36) share a group, and locate a boundary that moves or remains fixed. Swap roles. Compare membership, not the numeric value of a cluster ID.
 
 3. Choose a weight for a declared region-selection purpose. Use the lighting gradient or a split background as a counterexample to your own choice. State what annotation would be needed to call the regions objects; retain the masks for Day 3.
-
-## Use the 30 minutes purposefully
-
-- **0–4:** Inspect the input, choose the goal and write a prediction before running.
-- **4–12:** Complete the small concept TODOs; trace one input through your code and fix shape/value mistakes together.
-- **12–22:** Run the controlled comparison, record each result before changing controls, and swap editor/checker at minute 15.
-- **22–27:** Test the counterexample/changed condition; explain the mechanism and decide.
-- **27–30:** Both partners rehearse a 45-second evidence-based explanation; save code and download findings.
 
 ## Bring back
 

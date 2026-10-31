@@ -3,9 +3,9 @@
 
 ## Exercise + breakout
 
-Follow the [30-minute group task](GROUP_TASK.md) after guided setup.
+Follow the [group task (around 30 minutes)](GROUP_TASK.md) after guided setup.
 
-CV Day 3 Block 5 · guided setup, then a 30-minute exercise + breakout.
+CV Day 3 Block 5 · guided setup, then an exercise + breakout.
 
 Fit a small target head under an explicit brightness/contrast shift, export validation/package metadata and witness a real local request/response.
 
@@ -33,3 +33,8 @@ CV Day 3, Block 5: actual slide **61 — Exercise: verify a served pipeline** la
 ## Investigation focus
 
 Deployment workshop: does the saved model still mean the same thing?. Domain shift needs target validation. Head-only adaptation freezes the backbone. A package includes transforms, labels and revision. Hub storage differs from a running endpoint; reload and an actual request test the contract. Keep the task beside the output, preserve run A in the comparison log, and compare a controlled change before making your decision.
+
+
+## Inputs and API help
+
+Read the [function input/output contracts and official API references](TASK_API.md), also displayed immediately beside the notebook TODOs. They define every argument, data field, shape and convention; no private trainer material or inferred field names are needed.
