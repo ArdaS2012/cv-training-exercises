@@ -23,7 +23,7 @@ Complete only marked `# TODO` / `# END TODO` regions in [02_siamese.py](02_siame
 3. Change one controlled input, record the fixed inputs/model and inspect a failure.
 4. Save the notebook and download findings/assets. Share a measured observation, causal explanation and limitation.
 
-The checkpoint is a shared encoder on held-out pairs. Keep the pairs and embeddings fixed while changing a decision threshold. Similar-label conventions and unit-normalized vector ranges are stated in the notebook. If setup fails, re-run preflight before class; ask for the complete student ZIP. Day3 Block4 requires official model downloads once; cached offline launch uses `--offline-assets`.
+The checkpoint is a shared encoder on held-out pairs. Keep the pairs and embeddings fixed while changing a decision threshold. Similar-label conventions and unit-normalized vector ranges are stated in the notebook. If setup fails, re-run this block’s preflight before class or use the complete student ZIP. Only Day 3 Block 4 needs the separate official foundation-model cache; it is not a prerequisite for this block.
 
 
 ## Current teaching handoff
@@ -37,4 +37,4 @@ Match desk: which mistake costs more?. Both branches share encoder weights. Dist
 
 ## Inputs and API help
 
-Read the [function input/output contracts and official API references](TASK_API.md), also displayed immediately beside the notebook TODOs. They define every argument, data field, shape and convention; no private trainer material or inferred field names are needed.
+Read the [step-by-step task definitions and API reference](TASK_API.md), also rendered directly above the editable functions. Start with the concepts, then check each argument and return contract. The reference explains supplied operations, boundary cases, how to run the TODOs and how to interpret the actual report; your implementation and experimental choices remain your work.

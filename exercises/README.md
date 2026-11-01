@@ -6,6 +6,18 @@ You have around 30 minutes for each supplied pair investigation in breakout room
 
 [Shared setup](../README.md)
 
+Each notebook explains the concepts, supplied inputs, required APIs and expected
+outputs immediately before its TODOs. The block README includes the same
+definitions or links its local `TASK_API.md` for reference while you edit. Read the task's
+argument names and array axes before changing code; the prepared cells handle
+data loading, model calls, displays and findings export. Keep function names and
+return lines, replace the unfinished value inside the marked region, and run the
+cell with **Shift+Enter**. A waiting message is normal until a required TODO is
+complete. Passing a coding check and supporting a scientific conclusion are
+separate: use the controlled comparison and name a limitation in your findings.
+
+## Day 1
+
 - [Block 1: Clustering](day1-block-01-clustering/README.md)
 - [Block 2: Reduction](day1-block-02-reduction/README.md)
 - [Block 3: Segmentation](day1-block-03-segmentation/README.md)
@@ -13,7 +25,8 @@ You have around 30 minutes for each supplied pair investigation in breakout room
 
 ## Day 2
 
-Use `--day 2` with the shared launcher. Follow the README in each owning block; the guide and concepts stay in the trainer materials.
+Use `--day 2` with the shared launcher. Follow the README in each owning block;
+all definitions needed for the student task are included in that block and notebook.
 
 Each investigation below has **around 30 minutes in pairs**. Guided handoff and plenary review are separate; follow the trainer’s announced return time and the matching `GROUP_TASK.md`.
 

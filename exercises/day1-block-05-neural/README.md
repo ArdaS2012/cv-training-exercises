@@ -1,44 +1,108 @@
-# Train a Tiny Neural Classifier
+# Build a tiny image classifier end to end
 
-[Shared installation and help](../../README.md) · [Exercise index](../README.md)
+[Shared setup](../../README.md) · [Pair investigation](GROUP_TASK.md)
 
-## Start
+Start: `uv run --locked python start.py --block 5` from the student repository. CV Day 1 slide 64 launches this exercise. It uses local digits, NumPy 2.2 and CPU only.
 
-From the student workspace: `uv run --locked python start.py --block 5`.
+# Build a tiny image classifier end to end
 
-## Exercise + breakout
+**Around 30 minutes in pairs.** Build the route **images → split → parameters → forward pass → loss → gradients → update → validation**. Then audit whether learning happened.
 
-Follow the [hands-on investigation (around 30 minutes)](GROUP_TASK.md) after guided setup. It keeps the prior-slide takeaways beside the mission, code steps, controlled comparison and shared result. Use the full room for tracing, experimentation and explaining a decision. Keep the technical help below for the bounded TODOs.
+**Use slides 56–63:** a layer multiplies inputs by weights and adds biases; ReLU adds nonlinearity; softmax produces class probabilities; cross-entropy scores the true class; gradient descent changes parameters. Training and validation use different images; the final test stays untouched.
 
-## Help
+Seven short TODOs build one connected pipeline. The fixed data loader, stable softmax, derivatives, charts and export are supplied. Read the shape hints beside each task, implement a few lines, and trace one row with your partner. Swap editor/checker halfway.
 
-If results are waiting, complete the indicated TODO; independent inputs remain usable. A shape error means checking rows versus columns before changing the supplied pipeline. Reloading resets unsaved controls; use the findings download. Port conflict: add `--port 2721`.
+**Predict before running:** what changes between 0 and 80 updates? At rate 0.5 compare both from the same seed, then repeat 80 updates at rate 2.0. Keep validation image row 0 fixed. Record three runs, inspect the pixels, explain a changed or unchanged prediction and name a generalization limit.
 
-This practice belongs to CV Day 1 Block 5. It needs no private trainer guide, account, model download or GPU.
+Edit only TODO regions; Shift+Enter runs a cell. Use **Train on CPU** after completing the stages. Save code with Ctrl+S / Command+S and download findings after each trial; saving Python does not preserve widget values. `None` means a stage is unfinished. All data are local; no download or GPU is needed. Help: this block's README and GROUP_TASK.md.
 
-## Current teaching handoff
 
-CV Day 1, Block 5: actual slide **64 — Exercise: test learning evidence** launches the combined exercise + breakout. Return to plenary at the agenda’s room end. The notebook and group task are self-contained; private trainer files are not required.
+## TODO 1 — Choose training and validation rows
 
-## TODO input and output reference
+`prepare_data()` has **no arguments**. Supplied `data.classification_split()` returns `(x, y, ids, tr, va, te)`:
 
-### TODO 1 — activation(z)
+- `x`: finite float NumPy array `(300,64)`, one flattened 8×8 grayscale image per row, row-major pixel order, intensities already divided by 16 into `[0,1]`. No further normalization is needed.
+- `y`: integer `(300,)` true digit IDs `0..9`; `ids`: integer `(300,)` original source IDs, aligned with `x` and `y`.
+- `tr`, `va`, `te`: disjoint integer row-index arrays of lengths 180, 60, 60. They are fixed, stratified by digit and reproducible. An ID is not a row index.
 
-`np` is NumPy, already imported. `z` is a finite floating NumPy array of pre-activation values; signs may be positive, zero or negative. It has no probability or pixel-intensity constraint. The supplied model passes arrays `(n, 24)`, one row per image and one column per hidden unit; the function should preserve **any input array shape**.
+Return a dictionary with **exactly** `train_x`, `train_y`, `valid_x`, `valid_y`, `valid_ids`: select the corresponding rows using `tr` and `va`. Their shapes are `(180,64)`, `(180,)`, `(60,64)`, `(60,)`, `(60,)`. Preserve row alignment and inputs; never use `te` to select examples. The supplied loader is the only place creating splits. No empty batches occur.
 
-ReLU is defined elementwise: negative inputs become zero, and nonnegative inputs retain their value. Return `activated`, a finite numeric NumPy array with exactly `z.shape`. For a shape-only example, an input `(2, 3)` must still return `(2, 3)`; do not reduce over a batch or choose a predicted class. Zero remains zero.
+**Hint:** `array[index_array]` selects those rows and preserves their order. Generic example: selecting names at positions `[3,1]` returns position 3 before position 1. Before continuing, explain why fitting on validation rows would invalidate this comparison.
 
-### TODO 2 — mean_loss(probabilities, labels)
+## TODO 2 — Initialize a 64 → 24 → 10 model
 
-| Function input | Definition |
-|---|---|
-| `probabilities` | Float NumPy array `(n, c)`, with `n>0` samples and `c` classes. Entry `[i, j]` is the model probability that sample `i` belongs to class ID `j`. Values are in `[0, 1]`, and each row sums to 1 (up to rounding). These are already softmax probabilities, not logits. The digit task has `c=10`; do not hard-code that column count. |
-| `labels` | Integer NumPy array `(n,)`. Entry `i` is the true class ID for probability row `i`, from `0` through `c-1`. It is neither a one-hot matrix nor a predicted class. Rows are aligned and must stay in order. |
+`initialize()` has **no arguments**. Return `params`, a dictionary of finite float NumPy arrays with exactly these keys:
 
-The supplied training batch has `n=180` and classes 0–9; the function should also work on smaller nonempty batches. For example, with a shape `(2, 3)` matrix and `labels=[2, 0]`, the true class for the first row is class 2 and for the second row class 0. This establishes the input meaning, not implementation syntax.
+| Key | Shape | Role |
+|---|---|---|
+| `w1` | `(64,24)` | input-to-hidden weights |
+| `b1` | `(24,)` | one bias per hidden unit |
+| `w2` | `(24,10)` | hidden-to-class weights |
+| `b2` | `(10,)` | one bias per digit class |
 
-Cross-entropy here means the mean negative **natural** log of the true-class probability over samples. For numerical safety, probabilities below `1e-12` count as `1e-12` when computing this loss; zero probabilities must therefore give a finite result. Return `loss`, one finite nonnegative numeric scalar in natural-log units, rather than one value per row. The supplied code guarantees nonempty, valid inputs; no new validation, softmax, normalization, gradient or data split is required. The prepared derivatives assume these ReLU/cross-entropy definitions. `None` is only the unfinished state.
+A seeded `rng` is supplied inside the function. Draw `w1` **then** `w2` from a normal distribution of mean 0, standard deviation 0.15. Initialize both biases to zero. Recreate fresh arrays each call: each experiment must start with the same parameters. Do not initialize every weight to zero: equal hidden units would learn the same thing.
 
-#### API reference
+**Toolbox:** `rng.normal(loc, scale, size)` returns random floats of the requested tuple shape; `np.zeros(shape)` returns a zero array (an integer shape makes a vector). Parameters have no physical units. The fixed architecture has no extra layers or batch dimension in its weights. **Trace:** `(n,64)` times which matrix gives `(n,24)`?
 
-NumPy 2.2: [maximum](https://numpy.org/doc/2.2/reference/generated/numpy.maximum.html) compares elements with broadcasting; [integer-array indexing](https://numpy.org/doc/2.2/user/basics.indexing.html#integer-array-indexing) pairs row/column index arrays elementwise; [arange](https://numpy.org/doc/2.2/reference/generated/numpy.arange.html) supplies integer ranges with an excluded stop; [clip](https://numpy.org/doc/2.2/reference/generated/numpy.clip.html) bounds values; [log](https://numpy.org/doc/2.2/reference/generated/numpy.log.html) is the natural logarithm; [mean](https://numpy.org/doc/2.2/reference/generated/numpy.mean.html) reduces an array to its average when no axis is specified.
+## TODO 3 — Build the forward pass
+
+`forward(x, params)` receives finite float image rows `x` of shape `(n,64)`, `n>0`, values `[0,1]`, and the four-array parameter dictionary from TODO 2. Return the **tuple** `(z, h, probabilities)` in that order, not a dictionary:
+
+$$z=XW_1+b_1,\quad h=\max(0,z),\quad s=hW_2+b_2,\quad p=\mathrm{softmax}(s).$$
+
+`z` is the pre-activation `(n,24)`, `h` the ReLU output `(n,24)`, `s` the raw class scores `(n,10)` and `probabilities` the finite output `(n,10)` in `[0,1]`, each row summing to 1. Columns correspond to digit IDs 0 through 9. Keep the original inputs unchanged. ReLU preserves positives and sets negatives to zero; softmax compares scores within each image.
+
+**Toolbox:** `a @ b` is matrix multiplication; adding a bias vector broadcasts across rows. `np.maximum(a,b)` selects the elementwise maximum, broadcasting scalar arguments. Supplied `softmax(logits)` takes any finite `(n,c)` score array with `n,c>0` and returns same-shape normalized probabilities. It subtracts each row maximum before exponentiation to avoid overflow; it does not mutate scores. No derivative or softmax implementation is required.
+
+**Hint:** follow the four mathematical stages and track the shape after each. Trace one negative pre-activation through ReLU. The same function must work for 180 training rows, 60 validation rows or one image.
+
+## TODO 4 — Score the true class
+
+`mean_loss(probabilities, labels)` receives finite floating probabilities `(n,c)` in `[0,1]` with rows summing to 1 and integer true-class IDs `labels` of shape `(n,)` in `0..c-1`. `n>0`, `c>=1`; rows align. Return one finite nonnegative Python/NumPy numeric scalar, leaving inputs unchanged. Do not apply softmax again or score the maximum predicted probability.
+
+$$L=-\frac{1}{n}\sum_{i=0}^{n-1}\ln(\max(p_{i,y_i},10^{-12})).$$
+
+`n` is batch size; `p` is the probability matrix; `y_i` is the true class of row `i`. The natural logarithm gives natural-log units. A target probability 0.25 gives loss about 1.386; target certainty gives zero. Clipping at `1e-12` makes zero probabilities finite. This formula must match the supplied derivatives.
+
+**Toolbox:** `np.arange(n)` makes indices `0..n-1`; `a[rows, columns]` with equal-length index arrays selects paired entries (one per row). `np.clip(a, low, high)` bounds values without mutating `a`; `np.log(a)` takes elementwise natural logs; `np.mean(a)` returns the mean scalar. **Hint:** identify each row's true-class column, score it, then average. For schema only: labels `[2,0]` refer to column 2 of row 0 and column 0 of row 1.
+
+## TODO 5 — Apply a gradient update
+
+`update(params, grads, rate)` receives the parameter dictionary from TODO 2 and a gradient dictionary with **exactly the same keys and shapes**. Each gradient is a finite float array of derivatives of **mean training cross-entropy**, with respect to that parameter. `rate` is a positive finite scalar, selected here from `0.05, 0.2, 0.5, 2.0`. Return a **new dictionary and new arrays**; do not change either input.
+
+$$\theta_{new}=\theta_{old}-\eta\nabla_\theta L.$$
+
+`theta` is each weight/bias array; `eta` is `rate`. Subtracting moves against increasing loss; a large step can overshoot. Illustrative scalar trace: value 0.4, derivative 0.2, rate 0.1 gives 0.38. A zero gradient leaves its parameter unchanged.
+
+**Hint:** iterate over dictionary keys (or write four explicit entries) and apply the same rule to each. `for key in mapping` visits keys; `mapping[key]` retrieves its array; ordinary array arithmetic creates a new array. Do not recompute gradients inside this function.
+
+## TODO 6 — Connect the training loop
+
+`fit(dataset, params, steps, rate)` receives the exact dictionaries from TODOs 1/2, integer update count `steps>=0` (slider: 0–160 by 20), and positive scalar `rate` as in TODO 5. Return `(trained_params, history)`. `history` is a list of `steps+1` finite loss floats, including the baseline **before any update**. Rebind local `params` using your nonmutating update function; keep caller inputs unchanged.
+
+The loop and history storage are supplied. Fill the forward-pass, loss, backward and update connections at their named placeholders. Use **training rows only**, including for gradients. `forward` returns a three-item cache; its last item is probabilities. `mean_loss` needs those probabilities and aligned true labels.
+
+**Supplied derivative API:** `backward(x, labels, params, cache)` accepts nonempty finite training inputs `(n,64)`, integer labels `(n,)` in `0..9`, the current parameter dictionary, and the `(z,h,probabilities)` tuple from `forward` on **those same inputs and current parameters**. It returns `grads` with keys `w1,b1,w2,b2`, each matching its parameter's float shape. It calculates derivatives for ReLU and mean softmax cross-entropy and never mutates inputs or updates parameters. Use it before changing parameters. There is no need to derive backpropagation here.
+
+**Hint:** the supplied `if iteration == steps` break keeps 0 steps a genuine control and avoids an extra update. `history.append(float(value))` stores a scalar. Explain the difference between computing a gradient and applying one. Do not call the old all-in-one `train` helper.
+
+## TODO 7 — Evaluate without learning from validation
+
+`evaluate(dataset, params)` receives the dataset dictionary from TODO 1 and trained parameter dictionary from TODO 6. Use only `valid_x` and `valid_y` here. Return `(predictions, accuracy)`:
+
+- `predictions`: integer NumPy vector `(60,)`, one predicted digit ID `0..9` per validation row, same row order as `valid_ids`.
+- `accuracy`: one finite scalar fraction in `[0,1]`: number correct divided by number of validation images. It is not a percentage or the training loss.
+
+Run your forward pass on validation rows, choose each row's highest-probability class and compare to its true label. Do not calculate gradients or update parameters; inputs must remain unchanged. General operation supports any nonempty validation batch. For tied probabilities, choose the first class index.
+
+**Toolbox:** `np.argmax(a, axis=...)` returns indices of largest entries along that axis; axis 0 indexes rows, axis 1 indexes columns. Without `axis`, it flattens the array. `predictions == labels` returns aligned Boolean correctness values; `np.mean` averages them as 0/1. **Trace:** why does an `(n,10)` probability matrix become `(n,)` predictions?
+
+### Your connected experiment
+
+Press **Train on CPU**. The supplied display controller calls your functions in order and labels the first unfinished stage. Every press rebuilds the fixed split and seeded parameters. Compare `(steps,rate)=(0,0.5),(80,0.5),(80,2.0)`. The plots show training loss at every step and validation accuracy **before and after training only**, not a per-step validation curve. Keep image row 0 fixed and inspect its pixels and source ID. Changing probabilities need not change the predicted digit.
+
+Record settings, final loss, validation accuracy, image ID and prediction/target for every run. Name the evidence of fitting and one condition not tested (for example different handwriting/cameras). Choosing a rate using validation is model selection; it does not make validation an untouched test. The 60 test rows remain unused.
+
+### Official NumPy 2.2 API references
+
+[Row indexing](https://numpy.org/doc/2.2/user/basics.indexing.html#integer-array-indexing) · [normal](https://numpy.org/doc/2.2/reference/random/generated/numpy.random.Generator.normal.html) · [zeros](https://numpy.org/doc/2.2/reference/generated/numpy.zeros.html) · [matmul](https://numpy.org/doc/2.2/reference/generated/numpy.matmul.html) · [maximum](https://numpy.org/doc/2.2/reference/generated/numpy.maximum.html) · [arange](https://numpy.org/doc/2.2/reference/generated/numpy.arange.html) · [clip](https://numpy.org/doc/2.2/reference/generated/numpy.clip.html) · [log](https://numpy.org/doc/2.2/reference/generated/numpy.log.html) · [mean](https://numpy.org/doc/2.2/reference/generated/numpy.mean.html) · [argmax](https://numpy.org/doc/2.2/reference/generated/numpy.argmax.html).

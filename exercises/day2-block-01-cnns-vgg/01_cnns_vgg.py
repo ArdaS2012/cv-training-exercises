@@ -79,11 +79,14 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("""
-    ## TODO 1 — one patch response; TODO 2 — spatial output count
-    `patch` and `kernel` are matching 3×3 NumPy arrays; `bias` is a scalar. Return one weighted sum including bias. `height`, `kernel_size`, `padding`, `stride` are positive integer geometry settings (padding may be zero). Return the integer number of fully fitting windows for unit dilation; use floor and include the first window. These are small conceptual steps, not a whole training loop.
+    mo.md(r"""
+    ## Your implementation task
 
-    After completion inspect the actual tiny-CNN maps, test stride 1/2, export the shape table, then compare the genuine pretrained VGG partial trace with its measured full trace. The digit is outside ImageNet semantics; a bright map is not a known object label.
+    Complete the two small functions below. `patch_response` computes one learned
+    filter's response for a supplied image window. `output_size` predicts the count
+    of valid window positions on one spatial axis. The detailed guide below defines
+    every argument, the formulas, available operations and how the runner reads your
+    results. Images, trained weights, imports and plots are already prepared.
     """)
     return
 
@@ -91,32 +94,93 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Function inputs and API reference
+    ## TODO guide — calculate a response, then count positions
+
+    The prepared runner supplies images, learned weights and plots. Your two functions
+    answer different questions: **what number does one filter produce at one position?**
+    and **how many positions fit along an image axis?** Neither function trains a model.
 
     ### TODO 1: `patch_response(patch, kernel, bias)`
 
-    | Input | Definition and guarantees |
-    |---|---|
-    | `patch` | NumPy floating-point array, shape `(3, 3)`: one grayscale image window. Axis 0 is image row (y), axis 1 column (x); intensities are finite numbers in `[0, 1]`. |
-    | `kernel` | NumPy floating-point array of the same shape: learned weights for one input/output channel. Weights may be negative; `kernel[r, c]` aligns with `patch[r, c]`. This PyTorch operation uses cross-correlation: the provided kernel is not spatially reversed. |
-    | `bias` | One finite Python float, added once to the response. It is not a pixel or an array. |
+    A **patch** is a small rectangular window of image values. A **kernel** contains
+    one learned weight for each position in that window. A **bias** is one extra offset
+    for the whole response. Positive and negative weights can reinforce or cancel
+    image values; the result is a raw activation, so a negative response is valid.
 
-    Return one finite numeric scalar, with no remaining row/channel axes. The response is an activation before ReLU, so negative values are valid. Inputs are already loaded; keep them unchanged. The defining weighted-sum equation is in **Read the maps like an investigator** above.
+    | Argument | Type, structure and meaning |
+    | --- | --- |
+    | `patch` | Nonempty numeric NumPy array of shape `(R, C)`. Axis 0 is row/y; axis 1 is column/x. The live runner supplies a `(3, 3)` `float32` window from one grayscale digit, with intensities in `[0, 1]`. |
+    | `kernel` | Numeric NumPy array with exactly the same shape. `kernel[r, c]` weights `patch[r, c]`. Entries are finite, may be negative and are not intensities. The live runner supplies the first learned filter for one input/output channel. |
+    | `bias` | One finite numeric scalar, supplied as a Python float by the runner. It is added once, not once per pixel. |
+
+    Use the defining operation
+
+    $$y=\sum_{r=0}^{R-1}\sum_{c=0}^{C-1}x_{r,c}w_{r,c}+b.$$
+
+    Here `x` denotes `patch`, `w` denotes `kernel`, `b` is `bias`, and `y` is the one
+    response. Both sums together include every aligned coordinate. This is the
+    cross-correlation convention used by PyTorch: do not reverse the kernel.
+    Return one finite Python/NumPy numeric scalar; no row, column or channel axis
+    remains. Keep both input arrays unchanged. Use their supplied size rather than
+    assuming exactly nine entries: a small hand check may use another matching shape
+    and arbitrary finite numbers. Mismatched shapes and empty arrays are outside the
+    supplied task domain; no defensive validation is required.
+
+    **NumPy toolbox:** `a * b` on matching arrays multiplies entries at the same
+    coordinates; `a @ b` performs matrix multiplication and has a different meaning.
+    `np.sum(a, axis=None)` adds every entry and returns a scalar. With `axis=0` or
+    `axis=1`, it instead leaves values for the unreduced axis. `np` is already imported
+    in the editable cell. Choose how to combine the documented operations yourself.
 
     ### TODO 2: `output_size(height, kernel_size, padding, stride)`
 
-    | Input | Definition and guarantees |
-    |---|---|
-    | `height` | Positive integer: original input length along one spatial axis, in pixels. Current call: `8`. |
-    | `kernel_size` | Positive integer: window length on that same axis, in pixels. Current call: `3`; dilation is fixed at 1. |
-    | `padding` | Nonnegative integer: zero-filled pixels added **on each side** of that axis. Current call: `1`. |
-    | `stride` | Positive integer: distance in input pixels between consecutive window starts. Current controls choose `1` or `2`. |
+    This function counts output positions along **one spatial axis**. It receives
+    plain Python integer settings, not an image, array shape tuple or widget object.
 
-    Return one Python integer: output length on that axis. The supplied geometry always permits at least one complete window. Height and width follow the same definition independently. No batch size or channel count is included in this scalar. The equation and meaning of floor are given above.
+    | Argument | Valid domain and units |
+    | --- | --- |
+    | `height` | Positive integer: unpadded input length, in pixels. The live digit length is `8`. The same function can be used for width. |
+    | `kernel_size` | Positive integer: window length on this axis, in pixels. The runner uses `3`. Dilation (spacing inside the kernel) is fixed at `1`. |
+    | `padding` | Nonnegative integer: number of zero-filled pixels added on **each** side. The runner uses `1`, so the total added length is twice this value. |
+    | `stride` | Positive integer: distance between consecutive window starts, in input pixels. The widget selects `1` or `2`; the definition also applies to other positive integer strides. |
 
-    **API vocabulary:** NumPy `*` between matching arrays multiplies aligned entries; `np.sum(a)` returns a sum over all entries if no axis is specified. Python `//` is floor division for these nonnegative geometry counts. These operation definitions do not specify how to assemble your functions.
+    For these settings the padded input is guaranteed to fit at least one window.
+    The defining count is
 
-    **Official references:** [NumPy sum](https://numpy.org/doc/2.2/reference/generated/numpy.sum.html), [Python arithmetic](https://docs.python.org/3.12/reference/expressions.html#binary-arithmetic-operations), [PyTorch 2.8 Conv2d: shape and cross-correlation conventions](https://docs.pytorch.org/docs/2.8/generated/torch.nn.Conv2d.html).
+    $$H_{out}=\left\lfloor\frac{H+2P-K}{S}\right\rfloor+1.$$
+
+    `H`, `P`, `K`, `S` stand for the four arguments in the table. The numerator is
+    how far a window can move after its first valid placement. Dividing by stride
+    counts moves; floor discards a final incomplete move, and the extra `1` counts
+    the first position. Return one positive Python `int`, not a float, shape tuple or
+    channel count. `//` is Python floor division for these nonnegative geometry
+    counts. A stride need not divide the available distance exactly. No batch or
+    channel size enters this spatial count.
+
+    ### Before running and reading the evidence
+
+    Replace only `response=None` and `size=None` inside their marked TODO regions;
+    keep both signatures and return lines. Run the cell with **Shift+Enter**. `None`
+    means unfinished and leaves the plots waiting. The prepared runner calls both
+    functions with the current settings; a finite scalar/positive size alone does
+    not establish that your arithmetic is correct. Hand-check aligned products and
+    count complete windows before trusting the plot.
+
+    In the JSON, `patch_response` is your scalar, `predicted_spatial_size` is your
+    one-axis count, and `actual_stride_shape` is the measured shape in
+    `[batch, channels, height, width]` order. `tiny_trace` and `vgg_partial_trace` contain
+    `stage` strings and `shape` integer lists in that same tensor convention; class
+    `scores` have `[batch, classes]` instead. Compare your spatial count with both
+    last entries of the isolated stride shape. The full pretrained CNN trace keeps
+    its original stride; only the labelled isolated probe uses the chosen stride.
+    Inspect the same feature channel and shared color scale when discussing a lost
+    stroke. Channel number is not a known object category, and VGG's digit preview
+    is outside its original ImageNet image domain.
+
+    **Version-matched official references:** [NumPy 2.2 sum](https://numpy.org/doc/2.2/reference/generated/numpy.sum.html),
+    [NumPy array arithmetic](https://numpy.org/doc/2.2/user/quickstart.html#basic-operations),
+    [Python 3.12 arithmetic](https://docs.python.org/3.12/reference/expressions.html#binary-arithmetic-operations),
+    [PyTorch 2.8 Conv2d shape and cross-correlation](https://docs.pytorch.org/docs/2.8/generated/torch.nn.Conv2d.html).
     """)
     return
 

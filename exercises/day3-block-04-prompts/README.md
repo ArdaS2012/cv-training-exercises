@@ -37,4 +37,4 @@ Prompt repair: words and points do different jobs. CLIP compares an image with t
 
 ## Inputs and API help
 
-Read the [function input/output contracts and official API references](TASK_API.md), also displayed immediately beside the notebook TODOs. They define every argument, data field, shape and convention; no private trainer material or inferred field names are needed.
+Read the [step-by-step task definitions and API reference](TASK_API.md), also rendered directly above the editable functions. Start with the concepts, then check each argument and return contract. The reference explains supplied operations, boundary cases, how to run the TODOs and how to interpret the actual report; your implementation and experimental choices remain your work.

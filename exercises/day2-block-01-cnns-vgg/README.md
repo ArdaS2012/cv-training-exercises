@@ -40,4 +40,4 @@ Convolution detective: where did the pixels go?. A response is a weighted sum pl
 
 ## Inputs and API help
 
-Read the [function input/output contracts and official API references](TASK_API.md), also displayed immediately beside the notebook TODOs. They define every argument, data field, shape and convention; no private trainer material or inferred field names are needed.
+Read the [step-by-step task definitions and API help](TASK_API.md), also displayed immediately before the notebook's editable TODO cell. Start with what each function is meant to do, then check its argument types, shapes/fields, formula, expected return and boundary behavior. The guide explains the supplied APIs and how to verify/read the output; essential definitions are included locally, so official links are supporting references. Replace the marked placeholders, keep signatures and return lines, and rerun with Shift+Enter before using the comparison controls.

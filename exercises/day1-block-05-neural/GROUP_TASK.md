@@ -18,11 +18,11 @@ Use [shared setup](../../README.md); launch checks and any warming happen before
 
 ## Definitions before coding
 
-The notebook displays the exact types, shapes, field meanings and return contracts beside every TODO. The same [input/output definitions and API references](README.md#todo-input-and-output-reference) are available here locally. Read those definitions before editing; you do not need to inspect private files or guess the data structure.
+The notebook displays the exact types, shapes, field meanings and return contracts beside every TODO. The same [input/output definitions and API references](README.md#todo-1--choose-training-and-validation-rows) are available here locally. Read those definitions before editing; you do not need to inspect private files or guess the data structure.
 
 ## Investigate together
 
-1. Predict the learning curves and manually check one target-probability loss. Implement ReLU and mean cross-entropy; trace one negative activation and one target probability. Keep the supplied matching derivatives and fixed split unchanged.
+1. Predict the learning curves, then build the complete tiny pipeline in seven guided stages: select training/validation rows, initialize the 64 → 24 → 10 model, implement its forward pass with ReLU, score mean cross-entropy, apply gradient descent, connect the training loop and evaluate validation predictions. Stable softmax and the matching derivative calculation are supplied. Trace one image row and one weight update; keep the split and seed fixed.
 
 2. At rate 0.5 compare 0 and 80 updates from the same initialization. Log final training loss, validation accuracy and the same held-out image ID/prediction; inspect its actual pixels. Swap roles and explain one changed or unchanged prediction.
 
