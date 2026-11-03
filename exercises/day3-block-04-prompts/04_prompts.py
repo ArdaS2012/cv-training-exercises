@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="full", app_title="Test Two Vision Prompt Routes")
+app = marimo.App(width="medium", app_title="Build vision prompt scoring")
 
 
 @app.cell(hide_code=True)
@@ -11,234 +11,142 @@ def _():
     sys.path.insert(0,str(next(p for p in Path(__file__).resolve().parents if (p/'cv_exercises').is_dir())))
     import marimo as mo
     import numpy as np
+    import matplotlib.pyplot as plt
     import json
-    from cv_exercises import day3,display
-
-    return day3, display, json, mo, np
+    import torch
+    from cv_exercises import day3, display
+    reference=(next(p for p in Path(__file__).resolve().parents if (p/'cv_exercises').is_dir())/'exercises/day3-block-04-prompts/TASK_API.md').read_bytes()
+    return day3, display, json, mo, np, plt, reference, torch
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    ## Prompt repair: words and points do different jobs
-
-    **Around 30 minutes in pairs.** CLIP compares an image with text candidates; normalized scores depend on that set. SAM accepts spatial prompts and returns masks. Prompt edits change inference inputs, not weights.
-
-    ### Investigate, do not just run
-
-    1. Use the bus image throughout the core comparison. Predict why the supplied point-on-bus baseline misses the intended person near x280,y650, and which model can return that person’s pixels.
-
-    2. Complete comparable text candidates and a valid original-pixel spatial prompt. Run both real models, inspect baseline scores and mask, and save the baseline before editing.
-
-    3. Freeze the spatial prompt. Change ONE text description in otherwise identical parallel candidates, rerun and compare scores/ranking. Explain what changed in the denominator and what that cannot prove about semantic correctness.
-
-    4. Swap roles. Restore the text candidates, change only ONE spatial prompt item (point, exclusion or box) and compare masks on the fixed image/revisions. Mark included/excluded pixels around the intended person and diagnose a failure.
-
-    5. Recommend a prompt for the stated output, citing score and mask evidence separately. Propose one next controlled test; explain why a text label and a spatial mask are different outputs and neither comparison trains weights.
-
-    **Evidence log:** run | text item changed | spatial item changed | score/rank evidence | mask inclusion/exclusion. Save a run before changing controls. Export both the current findings and your comparison log.
-    """)
+def _(mo, reference):
+    mo.hstack([mo.md('# Build vision prompt scoring'),mo.download(reference,filename='TASK_API.md',label='API reference (.md)')],justify='space-between',align='center')
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("""
-    # Test Two Vision Prompt Routes
-
-    Investigation after guided setup. Run actual CLIP text inference and SAM prompt decoding with official pinned checkpoints and cached matching image encodings.
-
-    Predict → complete short TODOs → change one setting → inspect → explain → download.
-
-    Work in pairs and swap editor/observer. Edit only TODO regions; Shift+Enter runs cells. Ctrl+S / Command+S saves code. Download findings to retain control values and observations. The fresh starter waits politely; prepared loading/plotting/serving code needs no edits. No GPU or API key.
-    """)
-    return
+    image_id=mo.ui.dropdown({'Bus':'bus','Football':'zidane'},value='Bus',label='Image')
+    prompt_x=mo.ui.slider(0.,1.,step=.01,value=.44,show_value=True,label='Point x / width')
+    prompt_y=mo.ui.slider(0.,1.,step=.01,value=.6,show_value=True,label='Point y / height')
+    negative=mo.ui.checkbox(value=False,label='Add negative point')
+    run=mo.ui.run_button(label='Run CLIP and SAM')
+    mo.vstack([mo.hstack([image_id,negative]),mo.hstack([prompt_x,prompt_y]),run])
+    return image_id, negative, prompt_x, prompt_y, run
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    prompt_image=mo.ui.dropdown(options={'Bus photograph':'bus','Football photograph':'zidane'},value='Bus photograph',label='Fixed image')
-    run_prompt=mo.ui.run_button(label='Run both actual vision models')
-    prediction=mo.ui.text_area(label='Predict: which prompt change will affect scores or masks?',full_width=True)
-    mo.vstack([prediction,prompt_image,run_prompt])
-    return prediction, prompt_image, run_prompt
+    description_style=mo.ui.dropdown(['bare labels','photo descriptions'],value='photo descriptions',label='Text candidates')
+    description_style
+    return (description_style,)
 
 
 @app.cell(hide_code=True)
-def _(day3, mo, prompt_image):
-    mo.image(src=str(day3.ASSETS/(prompt_image.value+'.jpg')),width=380)
+def _(day3, image_id, mo):
+    mo.image(str(day3.ASSETS/(image_id.value+'.jpg')),width=420)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Choose the interface before the prompt
-    CLIP compares image and text vectors with cosine similarity $s=f(x)^Tg(t)/(\|f(x)\|\|g(t)\|)$. Reported candidate scores normalize over YOUR supplied candidate set. Changing one description can change both relative meaning and the normalization; the score is not a standalone probability that a description is true.
-
-    SAM takes original-image spatial coordinates: a positive point requests included content, a negative point excludes content, and a box constrains a region. It returns pixels, not a text class. On this bus photo, inspect the intended person near x280,y650 before editing. Hold the other prompt route fixed when comparing; changing text and geometry together would leave the cause ambiguous. Keep images and model revisions fixed; neither prompt edit updates weights.
+    ### 1 · Score image–text alignment
+    `image`: finite nonzero float NumPy `(D,)`; `texts`: finite nonzero-row float NumPy `(N,D)`, N=2–6, D≥1. Return float NumPy `(N,)`: $s_i=(v^Tt_i)/(\|v\|_2\|t_i\|_2)$ in candidate order. Vectors are dimensionless; normalize each text row separately. Preserve inputs; zero vectors are outside this task.
     """)
     return
-
-
-
-
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## Your two prompt inputs to the supplied vision models
-
-    You prepare data for two different interfaces: a list of text descriptions for CLIP, and a spatial instruction for SAM. The real models, image loading, tokenization, preprocessing and mask decoding are already connected.
-
-    Complete both functions below, run their cell with **Shift+Enter**, then press **Run both actual vision models**. On the bus image, the spatial target is the person around original coordinate x=280, y=650. Inspect the fixed point-on-bus baseline before choosing your prompt. Save a baseline, then change only one prompt item while the other route remains fixed. Model assets must be cached using the README's preflight before the investigation.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## TODO definitions and API reference
-
-    ### First choose the kind of output you want
-
-    **CLIP** compares the fixed image with each candidate description. A candidate is a possible text description, not a model answer or a permanent class ID. CLIP supplies image/text similarities and relative candidate scores; it does not return pixels belonging to the described object.
-
-    **SAM** returns a Boolean pixel mask using a spatial prompt: included points, excluded points and/or a bounding box. A positive point requests the object or region at that location; a negative point indicates content to leave out. These prompts do not name a semantic class. The models' weights remain fixed in both routes.
-
-    ### TODO 1 — prepare descriptions: `text_candidates()`
-
-    **Inputs.** This function takes **no arguments**. The selected image and model are handled by the prepared runner. You choose the descriptions by editing this function; do not read a widget, load the image, call a model or build tokens inside it.
-
-    **Return.** A Python `list[str]` with **2–6 nonempty, non-whitespace strings**. Keep descriptions short enough for CLIP's 77-token context including its special tokens; words and tokens are not the same unit. The prepared tokenizer does not automatically shorten an overlong candidate. Use a list, not one comma-separated string or a dictionary.
-
-    Choose a few plausible competing descriptions with parallel wording: the same level of detail and similar phrasing, varying the content you want to test. Keep candidate order and all unedited wording fixed for a one-description comparison. Duplicates are accepted by the adapter but add repeated alternatives to the normalization; use distinct descriptions for an informative core comparison. The runner preserves your list order.
-
-    **How the scores are produced.** Let `s_j` be image/text cosine similarity for candidate `j`, and `alpha > 0` the fixed learned CLIP scale. The displayed relative score is
-
-    $$p_j=\frac{\exp(\alpha s_j)}{\sum_{k=1}^{K}\exp(\alpha s_k)},$$
-
-    where `K` is the number of candidates. The scores sum to one **over your list only**. Adding, removing or editing a candidate changes this comparison set and may change other scores too. A higher score is not a verified probability that the description is true.
-
-    ### TODO 2 — prepare geometry: `spatial_prompt()`
-
-    **Inputs.** This function also takes **no arguments**. The runner supplies the selected image separately. Read the original-image coordinate rules below, then return your chosen geometry for that image.
-
-    **Return.** A new Python dictionary with the adapter fields below. At least one of `points` or `box` must be present and nonempty. You may use points with labels, a box, or both. Omit unused fields. These exact short keys belong to this exercise's adapter; they are **not** raw `SamProcessor` keyword arguments.
-
-    | Exact key | Value type and meaning |
-    | --- | --- |
-    | `points` | Optional nonempty nested Python list; coordinates are `int` or `float`. Each inner list has exactly two finite numbers `[x, y]`: one point in original-image pixels. Order is preserved. |
-    | `labels` | A `list[int]` of the same length/order as `points`: `1` includes content at that point, `0` excludes it. Supply this key explicitly when you supply points. Its numbers are prompt roles, not semantic class IDs. |
-    | `box` | Optional list of four finite numbers `[x_min, y_min, x_max, y_max]`. It gives opposite box corners with positive width and height, **not** `[x, y, width, height]`. |
-
-    **Coordinate definitions.** The image origin `(0, 0)` is the top-left. `x` increases to the right; `y` increases downward. An image array may be indexed `[y, x]`, but a prompt point uses the order **`[x, y]`**. Width is `W` and height is `H`, measured in original-image pixels:
-
-    - Every point satisfies `0 <= x < W` and `0 <= y < H`.
-    - Every box satisfies `0 <= x_min < x_max <= W` and `0 <= y_min < y_max <= H`.
-    - **Bus:** `W=810`, `H=1080`. **Football:** `W=1280`, `H=720`.
-
-    The displayed preview is resized; do not use its screen width as `W`. Recheck geometry if you switch images. A schema-only point value such as `[[20, 30]]` demonstrates nesting and coordinate order; it is not a recommended target point. A point list has one list per point, with **no extra image/batch brackets**. The wrapper supplies those internally. The bus investigation targets the person near `(280, 650)`; the fixed baseline's positive point lies on the bus instead. Choosing useful positive/exclusion points or a box is your experimental decision, not a guaranteed correct mask.
-
-    **Boundary and alignment rules.** A point on `x == W` or `y == H` is outside the image. A box may end at `W`/`H`, but its two corners must not be identical. Each label must stay aligned with its own point; reordering points without labels changes the prompt. An empty dictionary, labels without any geometry, or a mismatched point/label count is invalid. The adapter rejects invalid geometry with a warning; your TODO does not need to implement that validation. No strings, normalized coordinates, tensors or model objects belong in the returned geometry.
-
-    ### Python tools and the supplied adapter
-
-    Python lists use `[...]` and preserve item order. Dictionaries use named string keys and associate each with a value, which may itself be a list or dictionary. Generic syntax unrelated to the task: `book = {"title": "Atlas", "pages": 120}`. Return the container itself, not its printed form or a JSON string. `append(item)` changes a list in place and returns `None`; assigning that return value would erase your list variable.
-
-    `day3.prompt_report(candidates, prompt, image_id='bus')` is prepared for you. `candidates` and `prompt` follow your two return contracts; `image_id` is `'bus'` or `'zidane'`. It returns `None` if either input is `None`, otherwise `(report, figure, mask)`. It runs actual text encoding and SAM prompt decoding against cached image encodings for the fixed model revisions. It does not train weights. The adapter converts your original-image coordinates to model coordinates and returns masks at original `(H, W)` resolution; do not preprocess coordinates yourself.
-
-    Dotted field paths below describe entries in the displayed JSON. They are Python dictionary keys, not object attributes. **Read the actual result.** `report.text.candidates`, `.cosines` and `.scores` are parallel lists of length `K`; position `j` refers to your description `j`. `report.text.scale` is `alpha` in the equation. `report.spatial.prompt` records the geometry used; `.model_mask_quality_scores` has one predicted quality estimate for each of SAM's candidate masks, and `.chosen` is the zero-based selected candidate index (largest estimate). The returned `mask` is a Boolean NumPy array `(H, W)`; `report.mask_pixels` counts its `True` pixels. These quality estimates are not a measured reference IoU, and selecting the largest estimate does not prove it outlines the intended person. Inspect the overlay and exported mask for included/excluded content.
-
-    ### Run and compare one change
-
-    Replace `candidates = None` and `prompt = None` inside their marked regions, keeping the existing signatures and return lines. Run the cell, then press the Run button; the costly models only run on that button. Both TODOs must return data before the paired report can run. Preserve the fixed baseline and your own first export. For the text comparison hold geometry fixed; for the spatial comparison restore text and change just one point, label or box item. These supplied photographs and your inspected masks are development evidence, not an accuracy benchmark.
-
-    **Official references:** [Python 3.12 lists](https://docs.python.org/3.12/library/stdtypes.html#sequence-types-list-tuple-range), [Python dictionaries](https://docs.python.org/3.12/library/stdtypes.html#mapping-types-dict), [Transformers 4.57.1 SAM interfaces](https://huggingface.co/docs/transformers/v4.57.1/en/model_doc/sam), [Transformers 4.57.1 CLIP interfaces](https://huggingface.co/docs/transformers/v4.57.1/en/model_doc/clip). The exercise adapter's flat prompt schema is defined above and differs from the raw library's batched schema.
-    """)
-    return
-
 
 
 @app.cell
-def _(np):
-    def text_candidates():
-        # TODO 1: parallel label descriptions for this image comparison.
-        candidates=None
-        # END TODO 1
-        return candidates
-    def spatial_prompt():
-        # TODO 2: original-image points + labels, or an xyxy box.
-        prompt=None
-        # END TODO 2
-        return prompt
-
-    return spatial_prompt, text_candidates
-
-
-@app.cell(hide_code=True)
-def _(
-    day3,
-    json,
-    mo,
-    prompt_image,
-    run_prompt,
-    spatial_prompt,
-    text_candidates,
-):
-    prompt_result=None
-    base_prompt_result=None
-    _prompt_error=None
-    if run_prompt.value and text_candidates() is not None and spatial_prompt() is not None:
-        try:
-            _image=prompt_image.value
-            _baseline={'points':[[400,300]],'labels':[1]} if _image=='bus' else {'points':[[700,80]],'labels':[1]}
-            base_prompt_result=day3.prompt_report(['bus','bicycle','person'] if _image=='bus' else ['person','football','bus'],_baseline,_image)
-            prompt_result=day3.prompt_report(text_candidates(),spatial_prompt(),_image)
-        except (ValueError,TypeError,KeyError,OSError) as _e:_prompt_error=str(_e)
-    mo.callout(_prompt_error,kind='warn') if _prompt_error else mo.callout('Complete candidates/spatial prompt, then run. Models must be cached by preflight.',kind='info') if prompt_result is None else mo.vstack([mo.md('### Fixed baseline'),base_prompt_result[1],mo.md('### Your changed prompt'),prompt_result[1],mo.md('```json\n'+json.dumps(prompt_result[0],indent=2)+'\n```')])
-    return base_prompt_result, prompt_result
+def _(np, torch):
+    def cosine(image, texts):
+        # TODO: calculate cosine similarity per candidate.
+        result=None
+        # END TODO
+        return result
+    return (cosine,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    experiment_log=mo.ui.text_area(value="run | text item changed | spatial item changed | score/rank evidence | mask inclusion/exclusion\nA | \nB | \nStress case | \nDecision + limitation | ",label='Comparison log — preserve run A before changing a control',full_width=True)
-    mo.vstack([mo.md("### Keep your evidence while experimenting\nEach rerun replaces the current result. Copy measured values and name a visible feature or response field here before changing controls."),experiment_log])
-    return (experiment_log,)
-
-
-@app.cell(hide_code=True)
-def _(display, experiment_log, mo):
-    display.download(mo,experiment_log.value,{'columns':"run | text item changed | spatial item changed | score/rank evidence | mask inclusion/exclusion"},'day3-block4-comparison-log',label='Download comparison log (baseline + changed runs)')
+    mo.md(r"""
+    ### 2 · Normalize candidate scores
+    `scores`: finite float NumPy `(N,)` cosine scores; `scale`: finite positive float from the model. Return float NumPy `(N,)`: $p_i=e^{\ell_i-\max\ell}/\sum_j e^{\ell_j-\max\ell}$, where $\ell_i=scale\,s_i$. Use the stable shifted form; ties give equal scores. Sum is 1, preserve candidate order/inputs. These scores are relative to this candidate set, not independent truth probabilities.
+    """)
     return
 
 
+@app.cell
+def _(np, torch):
+    def probabilities(scores, scale):
+        # TODO: implement stable softmax over the scaled scores.
+        result=None
+        # END TODO
+        return result
+    return (probabilities,)
+
+
 @app.cell(hide_code=True)
 def _(mo):
-    observations=mo.ui.text_area(label='Findings: controlled change, measured result, failure explanation and limitation',full_width=True)
-    observations
-    return (observations,)
+    mo.md(r"""
+    ### 3 · Convert a spatial prompt
+    `points`: float NumPy `(P,2)` normalized `(x,y)` in [0,1], P≥1; `labels`: Python list of P binary ints, 1=include/0=exclude. `size`: `(W,H)` Python integer tuple, W,H≥2. Return `{'points': list[list[float]], 'labels': list[int]}` in original-image pixels: multiply x by W−1 and y by H−1 (no rounding). Thus 0/1 select first/last pixel centers. Copy labels; preserve inputs. SAM takes geometry, not text classes.
+    """)
+    return
+
+
+@app.cell
+def _(np, torch):
+    def pixel_prompt(points, labels, size):
+        # TODO: map normalized xy points into original-image pixel centers.
+        result=None
+        # END TODO
+        return result
+    return (pixel_prompt,)
 
 
 @app.cell(hide_code=True)
-def _(
-    base_prompt_result,
-    display,
-    mo,
-    observations,
-    prediction,
-    prompt_result,
-):
-    _downloads=[display.download(mo,observations.value,{'prediction':prediction.value,'baseline':None if base_prompt_result is None else base_prompt_result[0],'changed':None if prompt_result is None else prompt_result[0]},'vision-prompt-findings')]
-    if prompt_result is not None:
-        import io
-        from PIL import Image
-        for _name,_result in [('baseline',base_prompt_result),('changed',prompt_result)]:
-            _mask=io.BytesIO();Image.fromarray(_result[2].astype('uint8')*255).save(_mask,format='PNG')
-            _downloads.append(mo.download(_mask.getvalue(),filename=_name+'-prompt-mask.png',label='Download '+_name+' mask'))
-    mo.vstack(_downloads)
+def _(cosine, day3, description_style, image_id, mo, negative, np, pixel_prompt, plt, probabilities, prompt_x, prompt_y, run, torch):
+    from PIL import Image
+    prompt_result=None
+    _view=mo.md('Complete scoring and coordinate functions, then run. Model assets must be cached by preflight.')
+    if run.value:
+        _name=image_id.value
+        _candidates=['a photo of a bus','a photo of a bicycle','a photo of a person'] if _name=='bus' else ['a photo of a person','a photo of a football','a photo of a bus']
+        if description_style.value=='bare labels':_candidates=[_text.removeprefix('a photo of a ') for _text in _candidates]
+        _image=Image.open(day3.ASSETS/(_name+'.jpg')).convert('RGB')
+        _p=np.array([[prompt_x.value,prompt_y.value]]+([[.6,.3]] if negative.value else []))
+        _labels=[1]+([0] if negative.value else [])
+        _prompt=pixel_prompt(_p,_labels,_image.size)
+        if _prompt is not None:
+            _api=day3.text_scores(_candidates,_name)
+            _tokens=day3._CLIP_PROCESSOR(text=_candidates,return_tensors='pt',padding=True)
+            with torch.no_grad():
+                _texts=day3._CLIP.get_text_features(**_tokens).cpu().numpy()
+            _cached=torch.load(day3.ASSETS/'foundation-encodings.pt',weights_only=True)
+            _vector=_cached['clip_'+_name][0].cpu().numpy()
+            _cos=cosine(_vector,_texts)
+            if _cos is not None:
+                _scores=probabilities(_cos,_api['scale'])
+                if _scores is not None:
+                    _baseline={'points':[[400,300]],'labels':[1]} if _name=='bus' else {'points':[[700,80]],'labels':[1]}
+                    _base=day3.spatial_mask(_baseline,_name)
+                    _changed=day3.spatial_mask(_prompt,_name)
+                    _fig,_axes=plt.subplots(1,3,figsize=(11,3.5),layout='constrained')
+                    _rows=np.arange(len(_candidates));_axes[0].barh(_rows-.15,_api['scores'],height=.3,label='Transformers');_axes[0].barh(_rows+.15,_scores,height=.3,label='Yours');_axes[0].set_yticks(_rows,['bus','bicycle','person'] if _name=='bus' else ['person','football','bus']);_axes[0].set_xlim(0,1);_axes[0].legend();_axes[0].set_title('Same candidates')
+                    for _ax,_mask,_title,_pr in [(_axes[1],_base['mask'],'Baseline geometry',_baseline),(_axes[2],_changed['mask'],'Your geometry',_prompt)]:
+                        _ax.imshow(_image);_ax.imshow(np.ma.masked_where(~_mask,_mask),alpha=.5,cmap='spring');_ax.set_title(_title);_ax.axis('off')
+                        for (_x,_y),_lab in zip(_pr['points'],_pr['labels']):_ax.plot(_x,_y,'+' if _lab else 'x',color='lime' if _lab else 'red',markersize=9)
+                    prompt_result={'image':_name,'candidates':_candidates,'cosines':np.asarray(_cos).tolist(),'scores':np.asarray(_scores).tolist(),'reference_scores':_api['scores'],'max_score_difference':float(np.max(np.abs(_scores-_api['scores']))),'prompt':_prompt,'baseline_mask_pixels':int(_base['mask'].sum()),'changed_mask_pixels':int(_changed['mask'].sum())}
+                    _view=mo.vstack([_fig,mo.md(f"**Max score difference:** {prompt_result['max_score_difference']:.3g} · baseline/changed mask pixels: {prompt_result['baseline_mask_pixels']} / {prompt_result['changed_mask_pixels']}"),mo.md('First compare bare/photo descriptions with geometry fixed. Restore the text; move one point, then add the negative point. The mask has no text class. Model quality scores are estimates; no reference mask is supplied.')])
+    _view
+    return (prompt_result,)
+
+
+@app.cell(hide_code=True)
+def _(display, mo, prompt_result):
+    display.download(mo,'',{'report':prompt_result},'day3-prompts',label='Save trial')
     return
 
 

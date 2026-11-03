@@ -2,26 +2,26 @@
 
 ## Exercise + breakout
 
-You have around 30 minutes for each supplied pair investigation in breakout rooms after guided setup. Each block folder has a `GROUP_TASK.md` with the comparison and shared output; the same task is visible at the top of its notebook. Keep the preceding slide takeaways beside the task. Predict, implement a small step, explore a controlled change and use the measured evidence to make a decision. Swap editor/checker and bring both the finding and a limitation back to plenary. Blocks with no notebook exercise have no separate breakout task.
+Allow around 30 minutes per pair investigation after setup. Implement the marked steps, compare a controlled change and inspect the computed plots. Swap who edits; save your code. The trainer walks through the completed solution afterward. No written predictions, observation logs or group reports are required.
 
 [Shared setup](../README.md)
 
-Each notebook explains the concepts, supplied inputs, required APIs and expected
-outputs immediately before its TODOs. The block README includes the same
-definitions or links its local `TASK_API.md` for reference while you edit. Read the task's
-argument names and array axes before changing code; the prepared cells handle
-data loading, model calls, displays and findings export. Keep function names and
-return lines, replace the unfinished value inside the marked region, and run the
-cell with **Shift+Enter**. A waiting message is normal until a required TODO is
-complete. Passing a coding check and supporting a scientific conclusion are
-separate: use the controlled comparison and name a limitation in your findings.
+Each TODO has a brief task and input/output contract. Download `TASK_API.md`
+for API details when needed. Setup, model loading and visualizations are supplied.
+Keep function names and return structures; edit the marked regions and run with
+**Shift+Enter**. Waiting messages are normal before completion. Optional trial
+downloads save settings and measurements automatically.
 
 ## Day 1
 
-- [Block 1: Clustering](day1-block-01-clustering/README.md)
-- [Block 2: Reduction](day1-block-02-reduction/README.md)
-- [Block 3: Segmentation](day1-block-03-segmentation/README.md)
-- [Block 5: Neural learning](day1-block-05-neural/README.md)
+Four visual coding challenges. Start with the picture and first TODO; open the API details when needed. AI coding help is allowed—be ready to explain and change your code.
+
+| Block | Challenge | You build |
+|---|---|---|
+| 1 | [Build a K-Means step](day1-block-01-clustering/README.md) | Nearest-center assignment, mean updates and a library/failure comparison |
+| 2 | [Build and audit a projection](day1-block-02-reduction/README.md) | Centering, projection, reconstruction and error measurement |
+| 3 | [Build a magic wand](day1-block-03-segmentation/README.md) | Pixel features, label image and connected-region selection |
+| 5 | [Teach a tiny network](day1-block-05-neural/README.md) | Seven short stages from image rows to predictions |
 
 ## Day 2
 
@@ -30,21 +30,23 @@ all definitions needed for the student task are included in that block and noteb
 
 Each investigation below has **around 30 minutes in pairs**. Guided handoff and plenary review are separate; follow the trainer’s announced return time and the matching `GROUP_TASK.md`.
 
-| Block | Practice | Pair investigation |
-|---|---|---:|
-| 1 | [CNNs and VGG](day2-block-01-cnns-vgg/README.md) | around 30 minutes |
-| 2 | [Model improvement](day2-block-02-model-improvement/README.md) | around 30 minutes |
-| 3 | [Transfer and fine-tuning](day2-block-03-transfer/README.md) | around 30 minutes |
-| 4 | [Autoencoders](day2-block-04-autoencoders/README.md) | around 30 minutes |
-| 5 | [Detection](day2-block-05-detection/README.md) | around 30 minutes |
+| Block | Practice | You implement |
+|---|---|---|
+| 1 | [CNNs and VGG](day2-block-01-cnns-vgg/README.md) | Filter response, spatial convolution and pooling |
+| 2 | [Model improvement](day2-block-02-model-improvement/README.md) | Cross-entropy, regularized objective and validation choice |
+| 3 | [Transfer and fine-tuning](day2-block-03-transfer/README.md) | Task head, trainable layers and parameter-change audit |
+| 4 | [Autoencoders](day2-block-04-autoencoders/README.md) | Reconstruction, error, interpolation and latent-code updates |
+| 5 | [Detection](day2-block-05-detection/README.md) | Confidence filtering, IoU and class-aware NMS |
 
 ## Day 3 — advanced vision
 
 Each pair investigation has **around 30 minutes**, after its guided handoff. The task and preceding-slide takeaways stay together in the notebook and matching `GROUP_TASK.md`.
 
-- [Block 1 deep segmentation](day3-block-01-segmentation/README.md): around 30 minutes
-- [Block 2 Siamese pairs](day3-block-02-siamese/README.md): around 30 minutes
-- [Block 4 vision prompts](day3-block-04-prompts/README.md): around 30 minutes
-- [Block 5 adaptation and deployment](day3-block-05-deployment/README.md): around 30 minutes
+| Block | Practice | You implement |
+|---|---|---|
+| 1 | [Deep segmentation](day3-block-01-segmentation/README.md) | Class masks, overlap and connected components |
+| 2 | [Siamese pairs](day3-block-02-siamese/README.md) | Distances, contrastive loss/update and threshold errors |
+| 4 | [Vision prompts](day3-block-04-prompts/README.md) | Cosine scores, candidate softmax and spatial coordinates |
+| 5 | [Adaptation and deployment](day3-block-05-deployment/README.md) | Adaptation config, preprocessing, response and reload checks |
 
 Block 3 has a presenter-led architecture comparison and no exercise or breakout rooms. Use the shared root setup; selectors `--day 3 --block 1|2|4|5`.

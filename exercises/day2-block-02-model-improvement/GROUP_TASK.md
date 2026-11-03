@@ -1,40 +1,7 @@
-# Training clinic: can you defend an improvement?
+# Build a training objective
 
-**Exercise + breakout · CV Day 2 Block 2 · around 30 minutes in pairs**
+30 minutes in pairs; swap who edits.
 
-Your job is to produce a defensible decision from the actual outputs, including a result that challenges your first guess. One partner edits; the other checks controls, arithmetic and visual evidence. Swap roles during the investigation.
+Implement stable cross-entropy, a differentiable L2 objective and validation selection. Run controlled CPU trainings with your objective; compare one rate or penalty change, then evaluate the frozen choice on reserved test.
 
-## Keep these slide takeaways beside your experiment
-
-Parameters are learned; hyperparameters are chosen. Hold split, seed and budget fixed. Choose by validation loss; reserve test data until the decision is frozen. A lower training loss alone is insufficient.
-
-## Before the room opens
-
-Show the training/validation curves as a presenter-led worked example. Open the fixed checkpoint/splits and baseline rate 0.01, penalty 0.0; explain the declared validation metric. Leave configuration and selection TODOs for rooms.
-
-Use the [shared setup](../../README.md); model downloads and launch checks happen before the task. Start from the repository root with `uv run --locked python start.py --day 2 --block 2`. Keep the starter open. Prerequisite TODOs discussed in plenary belong to setup; the task below is the room assignment.
-
-## Your investigation
-
-1. Inspect the baseline settings (rate 0.01, penalty 0). Predict the training/validation curve change for either a rate or penalty intervention; write which outcome would contradict your hypothesis.
-
-2. Complete configuration and validation-selection TODOs. Run the supplied short CPU trainings with just that factor changed. Read both curves, not only the last number; record a point where their behavior differs.
-
-3. Swap roles. Test a second value of the SAME factor, holding the other setting, split, seed and budget fixed. Save both comparisons before rerunning; choose using the declared validation loss only.
-
-4. Look for a contrary result: a faster initial loss drop, better training fit or larger penalty that did not give the best validation outcome. Explain it using the measured short-run curves; if absent, inspect the labelled longer-run reference without mixing its budget into your live comparison.
-
-5. Freeze your candidate choice and justification, then use the reserved-test action once. Report that estimate without retuning. Explain what small data, one seed and the short budget prevent you from claiming.
-
-## Evidence to bring back
-
-Keep a short comparison log with columns **run | changed factor/value | train-curve evidence | validation loss | decision before test**. Save run A before changing settings: the notebook’s current report is replaced when controls rerun. Download each comparison figure/report plus the experiment log. Save the Python source separately; browser inputs are not saved in it.
-
-Bring one prediction, measured comparison, marked visual example or traced response, a decision and one limitation. Both partners must explain why the evidence supports it.
-
-If blocked, ask through the trainer’s chat/room-visit route. Use the working partner’s device if needed. Honest unchanged or worse outputs count when explained; label a supplied measured fallback instead of claiming fresh inference.
-
-
-## Inputs and API help
-
-Read the [function input/output contracts and official API references](TASK_API.md), also displayed immediately beside the notebook TODOs. They define every argument, data field, shape and convention; no private trainer material or inferred field names are needed.
+Keep your code and plots; the trainer presents the completed solution. No written prediction, observation log or group presentation. [Input/output and APIs](TASK_API.md).

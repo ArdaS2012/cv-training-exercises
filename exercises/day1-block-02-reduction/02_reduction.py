@@ -1,203 +1,373 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="full", app_title="Reduce and Reconstruct Image Data")
+app = marimo.App(width="medium", app_title="Build and audit a projection")
 
 
 @app.cell(hide_code=True)
 def _():
     import sys
     from pathlib import Path
-    sys.path.insert(0, str(next(p for p in Path(__file__).resolve().parents if (p/'cv_exercises').is_dir())))
+    root = next(p for p in Path(__file__).resolve().parents if (p/'cv_exercises').is_dir())
+    sys.path.insert(0,str(root))
     import marimo as mo
     import numpy as np
+    import matplotlib.pyplot as plt
     from cv_exercises import data, display
-
-    return data, display, mo, np
+    task_reference=(root/'exercises/day1-block-02-reduction/TASK_API.md').read_bytes()
+    return data, display, mo, np, plt, task_reference
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    ## Hands-on investigation: your shared mission
-
-    **Around 30 minutes in pairs.** Choose an image compression budget: how few coordinates preserve the detail your user needs?
-
-    ### Prior-slide takeaways to use now
-
-    Slides 23–28: center first; PCA uses SVD directions and discards components. Error and retained variance answer different questions; 2D gaps do not prove classes.
-
-    1. Choose one visible detail in input row 0 that must survive compression; predict the smallest acceptable rank. Complete the three PCA expressions, checking 300×64 → 300×k → 300×64 shapes. Explain why the mean must be restored.
-
-    2. Use the identical rows at k=1, 8 and 32. Log retained variance, MSE and whether that detail survives; save each run. Swap roles and choose the smallest tested rank meeting your declared goal, even when its plot looks less attractive.
-
-    3. Run the supplied nonlinear views at neighbor setting 5 and 30 while keeping rows/seed fixed. Track a recognizable labelled region and describe what changed. Challenge a class-separation claim with evidence; explain why perplexity and UMAP neighbor count are different controls.
-
-    **Bring back:** Three measured rank rows, a detail-preservation decision and a fixed-row neighborhood comparison with an interpretation limit.
-
-    Record each run in the evidence log before changing a control. Downloads include the current run plus your cumulative written log; save after each trial. See this block’s `GROUP_TASK.md`.
-    """)
+def _(mo, task_reference):
+    mo.vstack([mo.hstack([mo.md('# Build and audit a projection'),mo.download(task_reference,filename='TASK_API.md',label='API reference (.md)')],align='center'),mo.md('Build a compressor, select its rank, then measure which image neighbours survive a 2D view. Keep code and plots; no written report.')])
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    # Reduce and Reconstruct Image Data
-
-    Investigation after guided setup. Use centered SVD to calculate PCA projections and reconstructions. Compare retained variance and image error at three k values. Run the supplied t-SNE and UMAP helpers on the same rows with fixed seeds; record two neighborhood-interpretation limitations.
-
-    Inspect → predict → implement and trace → compare → challenge → explain and download evidence.
-
-    Use the cell code control to open TODO cells. Edit only `# TODO` areas and run with Shift+Enter. Waiting messages are normal before completion. Save Python with Ctrl+S / Command+S; widget values need the findings download. Work in pairs and swap who edits.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    components=mo.ui.slider(1,64,value=8,label='Retained components k')
-    neighbors=mo.ui.dropdown(options=[5,15,30],value=15,label='t-SNE perplexity / UMAP neighbors (different meanings)')
-    run_views=mo.ui.run_button(label='Run nonlinear views (CPU)')
-    prediction=mo.ui.text_area(label='Prediction: will more components reduce reconstruction error?',full_width=True)
-    mo.hstack([components,neighbors,run_views],wrap=True)
-    return components, neighbors, prediction, run_views
-
-
-@app.cell(hide_code=True)
-def _(data, np):
+def _(data, mo, plt):
     x,y,sample_ids=data.images()
-    mean=x.mean(axis=0)
-    centered=x-mean
-    u,singular,vt=np.linalg.svd(centered,full_matrices=False)
-    return centered, mean, sample_ids, singular, vt, x, y
+    _fig,_ax=plt.subplots(figsize=(2.5,2.2),layout='constrained')
+    _ax.imshow(x[0].reshape(8,8),cmap='gray',vmin=0,vmax=1);_ax.axis('off');_ax.set_title('Original · row 0')
+    components=mo.ui.slider(1,64,value=8,show_value=True,label='Retained directions k')
+    mo.vstack([_fig,components])
+    return components, sample_ids, x, y
 
 
 @app.cell(hide_code=True)
-def _(mo, prediction):
-    mo.vstack([prediction,mo.md(r"""
-    ## TODO 1 — retain directions, project images and reconstruct them
+def _(mo):
+    mo.md(r"""
+    ### 1 · Center the images
+    Remove the mean image before finding directions: $X_c=X-\mu$, where $\mu$ is the mean across image rows.
 
-    **Your job:** replace `basis`, `projected` and `reconstructed` with three NumPy array expressions. The cell receives `centered`, `components`, `mean` and `vt`. Data loading, centering and SVD are already done. Keep those inputs unchanged and do not fit another decomposition.
-
-    ### Understand the operation before coding
-
-    An 8×8 image has 64 pixel-intensity features. **PCA** finds perpendicular directions in that 64-dimensional feature space, ordered by how much variation they capture. A component is a direction; a projected coordinate tells how far an image lies along it. Retaining `k` directions compresses every image to `k` coordinates. Reconstructing maps those coordinates back to the 64 pixel positions, then restores the mean image.
-
-    The prepared **SVD**, $X_c=U\,\mathrm{diag}(s)\,V^T$, supplies those directions. Here $X_c$ is the centered image matrix; columns of $U$ describe sample coordinates, entries of $s$ measure direction strength, and rows of $V^T$ are feature directions. Only `vt`, the array representing $V^T$, is needed for your TODO. The leading `k` directions must form the **columns** of your retained basis $B_k$.
-
-    $$Z=X_c B_k,\qquad \widehat X=Z B_k^T+\mu$$
-
-    $Z$ contains projected coordinates, $\widehat X$ the reconstructed intensities and $\mu$ the mean image added to **every row**. $B_k^T$ reverses the projection's axis change; at smaller `k` it cannot recover discarded information. These are mathematical definitions, with the NumPy expressions left to you.
-
-    ### Inputs you can use
-
-    All supplied numeric arrays are finite `float64` NumPy arrays. Shapes are `(rows, columns)`; a one-dimensional shape such as `(64,)` is a vector.
-
-    | Input | Meaning, layout and valid values |
-    |---|---|
-    | `centered` | Shape `(300, 64)`: one image per row, one fixed pixel position per column. Pixels are flattened row by row. Each column's mean has already been subtracted. Values are normalized intensity differences and may be negative. |
-    | `mean` | Shape `(64,)`: original mean intensity at each pixel, in the same pixel order. Original image intensities are in `[0, 1]`. |
-    | `vt` | Shape `(64, 64)`: rows are orthonormal feature directions in decreasing singular-value order. It comes from `np.linalg.svd(centered, full_matrices=False)`, whose three returns are `u`, `singular`, `vt`. A row of `vt` is a direction, not an image. |
-    | `components` | Marimo slider **object**. `.value: int` is `k`, from 1 through 64. Read the current value; do not use the widget object in arithmetic or fix `k` to one trial. |
-
-    ### NumPy toolbox
-
-    `np` is imported in the notebook. For a two-dimensional array, `a[row_selection, column_selection]` selects axes in that order; `:` retains an axis, and a slice's stop is excluded. Transposition `a.T` swaps rows and columns. `@` performs matrix multiplication: `(a, b) @ (b, c)` yields `(a, c)`. The inner dimensions must agree. `*` is elementwise multiplication and does not perform this projection. Adding a length-`d` vector to an `(n, d)` array broadcasts the vector across all `n` rows. These operations return arrays; do not overwrite the provided inputs.
-
-    ### Required results and checks
-
-    | Output variable | Required shape | Meaning |
-    |---|---|---|
-    | `basis` | `(64, k)` | The retained feature directions as columns, preserving their supplied order. |
-    | `projected` | `(300, k)` | Each centered image's coordinates along the retained directions. |
-    | `reconstructed` | `(300, 64)` | Approximate original intensities, with the mean restored. |
-
-    For a shape-only example with 5 images, 6 features and `k=2`, the shapes are `(6, 2)`, `(5, 2)`, `(5, 6)`. Row `i` must continue to mean image `i`; none of these outputs contains class labels. All outputs must be finite numeric arrays; `None` means unfinished. The supplied data are nonempty and `k` is valid, so no new input validation is needed.
-
-    At `k=64`, reconstruction should match the original images up to floating-point roundoff. At smaller `k`, reconstructed values may leave `[0, 1]`; **do not clip the arrays** used for measurement. The displayed grayscale range is fixed for viewing. If the image remains too dark, check the missing mean; if shapes fail, say aloud what each axis represents before changing the expression.
-
-    ### Read the supplied comparison outputs
-
-    **MSE** is $\frac{1}{nd}\sum_{i,j}(X_{ij}-\widehat X_{ij})^2$: average squared reconstruction error over `n=300` images and `d=64` pixels, in normalized-intensity units squared. **Retained variance** is $\sum_{j=1}^{k}s_j^2/\sum_{j=1}^{64}s_j^2$, a unitless fraction. `singular` supplies the `s` values. Lower MSE and higher retained variance still do not guarantee that your chosen visible digit detail survives.
-
-    The supplied `display.nonlinear_views(x, neighbors=15)` takes the original finite `(n, d)` image matrix and an integer neighborhood setting, and returns `{'t-SNE': array, 'UMAP': array}`, each float array `(n, 2)` in the same sample order. It runs CPU optimizers with seed 42; no labels enter fitting. The button invokes it using `neighbors.value` (5, 15 or 30). That one setting is **t-SNE perplexity** (effective neighborhood size, positive and smaller than `n`) versus **UMAP n_neighbors** (graph-neighbor count, at least 2 and smaller than `n`). They are different definitions, not equivalent methods. Two-dimensional coordinates have arbitrary orientation/scale; digit colors are supplied labels for interpretation only. Views can run independently of the PCA TODO. Changing `k` does not make either nonlinear view a PCA reconstruction.
-
-    Official NumPy **2.2** references: [SVD](https://numpy.org/doc/2.2/reference/generated/numpy.linalg.svd.html), [slicing/indexing](https://numpy.org/doc/2.2/user/basics.indexing.html), [transpose](https://numpy.org/doc/2.2/reference/generated/numpy.ndarray.T.html), [matrix multiplication](https://numpy.org/doc/2.2/reference/generated/numpy.matmul.html), [broadcasting](https://numpy.org/doc/2.2/user/basics.broadcasting.html). Supplied view interfaces: [scikit-learn 1.7 t-SNE](https://scikit-learn.org/1.7/modules/generated/sklearn.manifold.TSNE.html), [UMAP parameters](https://umap-learn.readthedocs.io/en/0.5dev/parameters.html).""")])
+    `center_images(x)`: finite float `(n,d)`, n,d ≥ 1; rows are images, columns pixels. Return `(centered, mean)`, floats `(n,d)` and `(d,)`. Preserve x. Here x is `(300,64)`, 8×8 row-major pixels in [0,1]. `np` is supplied.
+    """)
     return
 
 
 @app.cell
-def _(centered, components, mean, vt):
-    # TODO 1: three small expressions for basis, projection, reconstruction.
+def _(np):
+    def center_images(x):
+        # TODO 1: calculate one mean per pixel and subtract it from every image.
+        centered=mean=None
+        # END TODO 1
+        return centered,mean
+    return (center_images,)
+
+
+@app.cell(hide_code=True)
+def _(center_images, mo, np, x):
+    centered,mean=center_images(x)
+    centered_ok=(isinstance(centered,np.ndarray) and centered.shape==x.shape and np.issubdtype(centered.dtype,np.floating) and np.isfinite(centered).all() and isinstance(mean,np.ndarray) and mean.shape==(64,) and np.issubdtype(mean.dtype,np.floating) and np.isfinite(mean).all())
+    singular=vt=None
+    if centered_ok:
+        _,singular,vt=np.linalg.svd(centered,full_matrices=False)
+    mo.md('SVD directions ready.' if centered_ok else 'Waiting: return centered images (300,64) and a mean image (64,).')
+    return centered, centered_ok, mean, singular, vt
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 2 · Keep the strongest directions
+    Retain the first k supplied SVD directions as columns. They define the compression budget.
+
+    `vt`: float `(64,64)`, strongest direction first in rows, or None while step 1 waits. `components.value`: integer k=1..64. Return float `basis: (64,k)`, preserving direction order and inputs; otherwise None. Use slicing and transpose `.T`.
+    """)
+    return
+
+
+@app.cell
+def _(components, vt):
     basis=None
+    if vt is not None:
+        # TODO 2: select k direction rows and arrange them as columns.
+        basis=None
+        # END TODO 2
+    return (basis,)
+
+
+@app.cell(hide_code=True)
+def _(basis, components, np):
+    basis_ok=isinstance(basis,np.ndarray) and basis.shape==(64,components.value) and np.issubdtype(basis.dtype,np.floating) and np.isfinite(basis).all()
+    return (basis_ok,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 3 · Compress
+    Project centered images onto the retained directions: $Z=X_cB$, with image rows in $X_c$ and basis columns in $B$.
+
+    `centered: float(300,64)`, `basis: float(64,k)`, supplied `basis_ok: bool`. Return float `projected: (300,k)`, same image order; leave None until ready. `@` is matrix multiplication. Preserve inputs.
+    """)
+    return
+
+
+@app.cell
+def _(basis, basis_ok, centered):
     projected=None
+    if basis_ok:
+        # TODO 3: calculate each image's coordinates in the retained basis.
+        projected=None
+        # END TODO 3
+    return (projected,)
+
+
+@app.cell(hide_code=True)
+def _(components, np, projected):
+    projected_ok=isinstance(projected,np.ndarray) and projected.shape==(300,components.value) and np.issubdtype(projected.dtype,np.floating) and np.isfinite(projected).all()
+    return (projected_ok,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 4 · Reconstruct
+    Reverse the projection and restore image brightness: $\hat X=ZB^T+\mu$.
+
+    `projected: float(300,k)`, `basis: float(64,k)`, `mean: float(64,)`, supplied `projected_ok: bool`. Return float `reconstructed: (300,64)`, same image/pixel order; leave None until ready. Use `@`, `.T`, `+`; preserve inputs, do not clip values.
+    """)
+    return
+
+
+@app.cell
+def _(basis, mean, projected, projected_ok):
     reconstructed=None
-    # END TODO 1
-    return basis, projected, reconstructed
+    if projected_ok:
+        # TODO 4: reconstruct pixel rows and restore the mean image.
+        reconstructed=None
+        # END TODO 4
+    return (reconstructed,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 5 · Measure the loss
+    Compute mean squared pixel error: $MSE=\frac{1}{nd}\sum_{i,j}(X_{ij}-\hat X_{ij})^2$; i indexes images, j pixels.
+
+    `reconstruction_error(original, restored)`: equal finite float arrays `(n,d)`, n,d ≥ 1. Return one nonnegative Python float, in intensity units squared. Preserve inputs. `np.mean`, subtraction and elementwise squaring are available.
+    """)
+    return
+
+
+@app.cell
+def _(np):
+    def reconstruction_error(original,restored):
+        # TODO 5: average squared differences over all images and pixels.
+        error=None
+        # END TODO 5
+        return error
+    return (reconstruction_error,)
+
+
+@app.cell(hide_code=True)
+def _(components, mo, np, plt, reconstructed, reconstruction_error, singular, x):
+    reconstruction_ok=isinstance(reconstructed,np.ndarray) and reconstructed.shape==x.shape and np.issubdtype(reconstructed.dtype,np.floating) and np.isfinite(reconstructed).all()
+    mse=pca_error_ok=variance_fraction=None
+    _view=mo.md('Waiting: finish the five steps to reveal your reconstruction and error map.')
+    if reconstruction_ok:
+        mse=reconstruction_error(x,reconstructed)
+        if mse is not None and isinstance(mse,(int,float,np.floating)) and np.isfinite(mse) and mse>=0:
+            _expected=float(np.sum(singular[components.value:]**2)/x.size)
+            pca_error_ok=bool(np.isclose(mse,_expected,rtol=1e-7,atol=1e-10))
+            variance_fraction=float(np.sum(singular[:components.value]**2)/np.sum(singular**2))
+            _fig,_axes=plt.subplots(1,3,figsize=(8,2.8),layout='constrained')
+            for _ax,_image,_title in zip(_axes[:2],[x[0],reconstructed[0]],['Original',f'Your reconstruction · k={components.value}']):
+                _ax.imshow(_image.reshape(8,8),cmap='gray',vmin=0,vmax=1);_ax.axis('off');_ax.set_title(_title)
+            _map=_axes[2].imshow(np.abs(x[0]-reconstructed[0]).reshape(8,8),cmap='magma',vmin=0,vmax=1)
+            _axes[2].axis('off');_axes[2].set_title('Absolute pixel error');_fig.colorbar(_map,ax=_axes[2],shrink=.65)
+            _check='SVD residual check passed.' if pca_error_ok else 'Check mean, directions and error axes: SVD residual check failed.'
+            _view=mo.vstack([_fig,mo.md(f'**Your MSE {mse:.6f}** · SVD benchmark {_expected:.6f} · retained variance {variance_fraction:.1%}. {_check}'),mo.md('Compare k **1 → 8 → 32**, then 64. Which details survive? Lower average error does not guarantee every detail.')])
+        else:
+            _view=mo.md('Step 5: return one finite nonnegative float error.')
+    _view
+    return mse, pca_error_ok, reconstruction_ok, variance_fraction
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 6 · Choose the smallest compression budget
+    Select the **smallest** rank whose retained variance reaches the target:
+    $C_k=\sum_{j=1}^k s_j^2/\sum_j s_j^2$, with singular values $s_j$ in decreasing order.
+
+    `choose_rank(singular_values, target)`: finite nonnegative float `(r,)`, r ≥ 1, positive total squared energy; target is a float with 0 < target < 1. Return a Python int in 1..r, not a zero-based index. Preserve inputs. `np.cumsum`, `np.sum`, `np.flatnonzero` or `np.searchsorted` are available; full API in the download.
+    """)
+    return
+
+
+@app.cell
+def _(np):
+    def choose_rank(singular_values, target):
+        # TODO 6: accumulate squared singular values and find the first sufficient rank.
+        rank=None
+        # END TODO 6
+        return rank
+    return (choose_rank,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    target_variance=mo.ui.dropdown(options=[0.8,0.9,0.95,0.99],value=0.9,label='Target retained variance')
+    target_variance
+    return (target_variance,)
+
+
+@app.cell(hide_code=True)
+def _(choose_rank, components, mo, np, plt, singular, target_variance):
+    chosen_rank=None
+    _view=mo.md('Waiting: complete centering and rank selection to show the budget curve.')
+    if singular is not None:
+        chosen_rank=choose_rank(singular,target_variance.value)
+        if isinstance(chosen_rank,(int,np.integer)) and not isinstance(chosen_rank,bool) and 1<=chosen_rank<=len(singular):
+            _curve=np.cumsum(singular**2)/np.sum(singular**2)
+            _sufficient=_curve[chosen_rank-1]>=target_variance.value
+            _minimal=chosen_rank==1 or _curve[chosen_rank-2]<target_variance.value
+            _fig,_ax=plt.subplots(figsize=(7,2.8),layout='constrained')
+            _ax.plot(np.arange(1,len(singular)+1),_curve)
+            _ax.axhline(target_variance.value,color='gray',ls='--',label='Target')
+            _ax.axvline(chosen_rank,color='tab:green',label='Your selected rank')
+            _ax.axvline(components.value,color='tab:orange',ls=':',label='Reconstruction slider')
+            _ax.set(xlabel='Retained directions k',ylabel='Variance fraction',ylim=(0,1.02));_ax.legend()
+            _status='Target met with the smallest rank.' if _sufficient and _minimal else 'Check both conditions: target reached AND previous rank below target.'
+            _view=mo.vstack([_fig,mo.md(f'Your budget: **{chosen_rank} coordinates/image**. {_status} Set the reconstruction slider to this rank and inspect the digit. Compare targets 80% → 95%. This counts scores only; a shared basis and mean also need storage.')])
+        elif chosen_rank is not None:
+            _view=mo.md('Step 6: return one integer rank in 1..64.')
+    _view
+    return (chosen_rank,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    _explanation=mo.md(r"""
+    ### What is the neighbourhood setting?
+    A neighbour is **another image with a similar pixel vector**, not a nearby pixel inside one image. In the original data, similarity uses Euclidean distance over 64 normalized pixels. The layout tries to keep local relationships nearby in 2D.
+
+    - **UMAP `n_neighbors`:** the neighbour count used to construct its local graph. 5 emphasizes a smaller local scale; 30 includes broader relationships.
+    - **t-SNE `perplexity`:** an *effective* neighbour count derived from similarity probabilities, not a hard cutoff at exactly 5 or 30 images.
+
+    This shared control supplies the number to both different parameters. Keep rows, preprocessing and seed 42 fixed; compare 5 → 30 **within each method**. Larger is not automatically better. Neither setting is a cluster count or PCA rank.
+    """)
+    neighbors=mo.ui.dropdown(options=[5,15,30],value=5,label='Local scale: t-SNE perplexity / UMAP n_neighbors')
+    run_views=mo.ui.run_button(label='Run 2D views')
+    mo.vstack([_explanation,mo.md('Change the local scale, then press Run. Optimizers are supplied; the audit below is your code.'),mo.hstack([neighbors,run_views],justify='start',wrap=True)])
+    return neighbors, run_views
 
 
 @app.cell(hide_code=True)
 def _(display, neighbors, run_views, x):
-    nonlinear=None
-    if run_views.value:
-        nonlinear=display.nonlinear_views(x,neighbors.value)
+    nonlinear=display.nonlinear_views(x,neighbors.value) if run_views.value else None
     return (nonlinear,)
 
 
 @app.cell(hide_code=True)
-def _(
-    basis,
-    components,
-    display,
-    mo,
-    nonlinear,
-    np,
-    projected,
-    reconstructed,
-    singular,
-    x,
-    y,
-):
-    _view = None
-    if any(v is None for v in (basis,projected,reconstructed)):
-        _view = mo.callout('Waiting for the three PCA expressions. Nonlinear views can run independently.',kind='info')
-    elif np.asarray(projected).shape!=(len(x),components.value) or np.asarray(reconstructed).shape!=x.shape:
-        _view = mo.callout('Projection must be 300×k; reconstruction must restore 300×64.',kind='warn')
-    elif nonlinear is None:
-        _view = mo.vstack([mo.md('PCA arrays ready. Press Run nonlinear views to compute both neighborhood layouts.'),display.reduction_plot(x,reconstructed,singular,components.value,{},y)])
-    else:
-        _view = mo.vstack([display.reduction_plot(x,reconstructed,singular,components.value,nonlinear,y),mo.md('These are real optimizer outputs, fixed seed 42. Digit colors are labels for interpretation only. Axes, gaps and island sizes do not certify semantic classes.')])
+def _(mo, nonlinear, plt, y):
+    _view=None
+    if nonlinear is not None:
+        _fig,_axes=plt.subplots(1,2,figsize=(7,3),layout='constrained')
+        for _ax,(_name,_points) in zip(_axes,nonlinear.items()):
+            _ax.scatter(_points[:,0],_points[:,1],c=y,cmap='tab10',s=10)
+            _ax.scatter(*_points[0],s=100,facecolors='none',edgecolors='black');_ax.set_title(_name+' · ring = row 0')
+        _view=mo.vstack([_fig,mo.md('Same rows, seed 42. Labels only color the plot; islands do not establish classes. Re-run after changing the setting.')])
     _view
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    observations=mo.ui.text_area(value='Rank k | retained variance | MSE | chosen detail survives? | evidence in row 0\n1 | | | |\n8 | | | |\n32 | | | |\nAccepted detail/goal and smallest acceptable tested rank:\nNonlinear setting 5 versus 30: one located change per method:\nClaim the plots cannot establish and why:',label="Evidence log — keep every trial, mechanism and decision",full_width=True)
-    observations
-    return (observations,)
+    mo.md(r"""
+    ### 7 · Find each image's nearest neighbours
+    Build a neighbour table from distances: $D_{ij}=\sum_f(A_{if}-A_{jf})^2$; i,j are image rows, f is a feature. Squared distance gives the same ranking as Euclidean distance.
+
+    `nearest_neighbor_ids(points, q)`: finite float `(n,d)`, n ≥ 2, d ≥ 1; integer q in 1..n−1. Return integer `(n,q)` **row indices**, closest first; exclude the image itself, retain distinct duplicate images, and break equal-distance ties by smaller row index. Preserve inputs. Here n=300, d=64 or 2, q=5. Loops or broadcasting are fine. `np.sum`, `np.argsort(..., axis=..., kind='stable')`, `np.fill_diagonal` and `np.inf` are available.
+    """)
+    return
+
+
+@app.cell
+def _(np):
+    def nearest_neighbor_ids(points, q):
+        # TODO 7: calculate distances, exclude self, and return the nearest row indices.
+        ids=None
+        # END TODO 7
+        return ids
+    return (nearest_neighbor_ids,)
 
 
 @app.cell(hide_code=True)
-def _(
-    components,
-    display,
-    mo,
-    neighbors,
-    nonlinear,
-    np,
-    observations,
-    prediction,
-    reconstructed,
-    sample_ids,
-    singular,
-    x,
-):
-    measurements={'k':components.value,'neighbor_setting':neighbors.value,'seed':42,'sample_ids':sample_ids.tolist(),'prediction':prediction.value,'variance_fraction':float(np.sum(singular[:components.value]**2)/np.sum(singular**2))}
-    if reconstructed is not None: measurements['mse']=float(np.mean((x-reconstructed)**2))
-    if nonlinear is not None: measurements['views']={n:v.tolist() for n,v in nonlinear.items()}
-    display.download(mo,observations.value,measurements,'reduction-findings')
+def _(mo):
+    mo.md(r"""
+    ### 8 · Audit what the projection preserved
+    Measure the fraction of original neighbours retained for **each** image:
+    $R_i=|N_q^{original}(i)\cap N_q^{view}(i)|/q$. The bars mean set size; order inside a neighbour list does not matter. Keep audit q=5 fixed while changing the optimizer's scale 5 → 30.
+
+    `neighbor_retention(original_ids, view_ids)`: integer arrays `(n,q)`, n ≥ 2, 1 ≤ q < n. Each aligned row contains q distinct other row indices in 0..n−1, no self; order may differ. Return finite float `(n,)` in [0,1], not a single overall score. Preserve inputs. `np.intersect1d(a,b)` returns common values of two 1D arrays; Python sets/loops also work. Identical lists in different order give 1; disjoint lists give 0.
+    """)
+    return
+
+
+@app.cell
+def _(np):
+    def neighbor_retention(original_ids, view_ids):
+        # TODO 8: count shared neighbour IDs per image and normalize by q.
+        retained=None
+        # END TODO 8
+        return retained
+    return (neighbor_retention,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    inspected_row=mo.ui.slider(0,299,value=0,show_value=True,label='Inspect image row')
+    inspected_view=mo.ui.dropdown(options=['t-SNE','UMAP'],value='t-SNE',label='View to audit')
+    mo.hstack([inspected_row,inspected_view],wrap=True)
+    return inspected_row, inspected_view
+
+
+@app.cell(hide_code=True)
+def _(inspected_row, inspected_view, mo, nearest_neighbor_ids, neighbor_retention, nonlinear, np, plt, x, y):
+    audit_scores={}
+    _view=mo.md('Waiting: implement steps 7–8 and run the 2D views. This audit works independently of your PCA code.')
+    if nonlinear is not None:
+        _original=nearest_neighbor_ids(x,5)
+        _valid=lambda a: isinstance(a,np.ndarray) and a.shape==(300,5) and np.issubdtype(a.dtype,np.integer) and ((a>=0)&(a<300)).all() and all(len(set(row))==5 and i not in row for i,row in enumerate(a))
+        if _valid(_original):
+            _view_ids={}
+            for _name,_points in nonlinear.items():
+                _ids=nearest_neighbor_ids(_points,5)
+                if _valid(_ids):
+                    _score=neighbor_retention(_original,_ids)
+                    if isinstance(_score,np.ndarray) and _score.shape==(300,) and np.issubdtype(_score.dtype,np.floating) and np.isfinite(_score).all() and ((_score>=0)&(_score<=1)).all():
+                        audit_scores[_name]=_score
+                        _view_ids[_name]=_ids
+            if len(audit_scores)==2:
+                _row=inspected_row.value;_name=inspected_view.value
+                _fig,_axes=plt.subplots(2,6,figsize=(9,3.5),layout='constrained')
+                for _axs,_ids,_caption in zip(_axes,[_original[_row],_view_ids[_name][_row]],['Original 64D','2D '+_name]):
+                    _compared=_view_ids[_name][_row] if _caption=='Original 64D' else _original[_row]
+                    for _col,(_ax,_id) in enumerate(zip(_axs,[_row,*_ids])):
+                        _ax.imshow(x[_id].reshape(8,8),cmap='gray',vmin=0,vmax=1);_ax.axis('off')
+                        _tag='Query' if _col==0 else ('Retained' if _id in _compared else ('Lost' if _caption=='Original 64D' else 'New'))
+                        _ax.set_title(f'{_tag} #{_id}\ndigit {y[_id]}',fontsize=9)
+                    _axs[0].set_ylabel(_caption)
+                _fig.suptitle(f'Row {_row}: original neighbours (top) vs {_name} neighbours (bottom)',fontsize=11)
+                _summary=' · '.join(f'{n}: mean {s.mean():.1%}, row {_row}: {s[_row]:.0%}' for n,s in audit_scores.items())
+                _view=mo.vstack([_fig,mo.md(f'**Your neighbour retention (q=5):** {_summary}'),mo.md('Compare scale 5 → 30 for the same row, then inspect another row. Look for a lost neighbour despite matching digit colors. This score audits local pixel-distance relationships; it is not accuracy, trustworthiness, or proof of classes. Save each trial to compare measurements.')])
+            else:
+                _view=mo.md('Steps 7–8: return valid neighbour tables and one float retention value per image.')
+        elif _original is not None:
+            _view=mo.md('Step 7: return integer (300,5), unique other row indices per row, with no self neighbour.')
+    _view
+    return (audit_scores,)
+
+
+@app.cell(hide_code=True)
+def _(audit_scores, chosen_rank, components, display, inspected_row, mo, mse, neighbors, nonlinear, sample_ids, target_variance, variance_fraction):
+    _values={'k':components.value,'neighbor_setting':neighbors.value,'seed':42,'sample_ids':sample_ids.tolist(),'svd_benchmark_variance_fraction':variance_fraction,'mse':mse,'target_variance':target_variance.value,'chosen_rank':None if chosen_rank is None else int(chosen_rank),'audit_q':5,'inspected_row':inspected_row.value,'neighbor_retention':{n:s.tolist() for n,s in audit_scores.items()}}
+    if nonlinear is not None:_values['views']={n:v.tolist() for n,v in nonlinear.items()}
+    display.download(mo,'',_values,'reduction-trial',label='Save trial')
     return
 
 

@@ -1,102 +1,17 @@
-# Task definitions and API help
+# Autoencoder coding/API reference
 
-## TODO guide — connect the autoencoder and measure reconstruction error
+All three function contracts sit beside their TODOs. Models are prepared PyTorch CPU Autoencoders. Encoder: Linear64→32, ReLU, Linear32→k; decoder: Lineark→32, ReLU, Linear32→64, Sigmoid. Calling model.encoder(tensor)/decoder(tensor) returns a tensor; do not convert to NumPy inside the model path or train here. Images flatten row-major to64 intensities. Evaluation mode/no-grad are supplied around calls; functions preserve model/input values. NumPy MSE consumes arrays only, over all coordinates, with nonempty matching shapes; units intensity squared.
 
-An **encoder** maps the input pixels to a shorter vector, the **latent code**.
-A **decoder** maps that code back to estimated pixels, the **reconstruction**.
-The models already have trained weights. Your first function connects their
-provided interfaces; your second gives one average error against a clean target.
-Neither TODO trains a model or removes noise by a hand-written image filter.
+`day2.ae_inputs(row,k,noise)` takes row int0..299,k4/16, noise std float0..0.5 and returns clean/noisy tensors1×64, dictionary models with exact keys clean/denoise, and integer image_id. Corruption uses seed42 and clamps to[0,1]. The clean/denoise checkpoints have distinct training objectives/histories; denoising was trained at noise std.25. Changing current noise does not retrain. `day2.ae_compare(reconstruct,pixel_mse,row,k,noise)` calls your functions and returns `(report,figure)` or None until unfinished. Report fields: image_id:int,latent_width:int,coordinate_ratio:float64/k,noise_std:float,seed:int42,clean_target_mse:dict with clean/denoise nonnegative floats,noisy_input_mse:float,units/note:str. Coordinate count is not codec bitrate.
 
-### TODO 1: `reconstruct(model, noisy)`
+Latent interpolation consumes clean images from two selected rows and the clean-trained model. It encodes both, interpolates same-index latent coordinates, then decodes. Alpha0/1 must equal their **reconstructions**, not exact originals; both endpoints are valid even when rows coincide. Pixel interpolation is supplied separately as a visible comparison. Intermediate images are illustrative, not proof of semantic disentanglement. Compare alpha0/.5/1, width4/16 and one noise change without changing all controls together.
 
-| Argument | Type, shape and meaning |
-| --- | --- |
-| `model` | Supplied pretrained PyTorch `nn.Module`, already loaded on CPU and set to evaluation mode. It has callable attributes `encoder` and `decoder`; they are not dictionary keys. The selected latent width `k` is `4` or `16`. |
-| `noisy` | CPU `torch.Tensor`, dtype `torch.float32`, shape `(1, 64)`: one normalized noisy grayscale digit. Axis 0 is the one-image batch; axis 1 is flattened pixel position. All values are finite and clipped to `[0, 1]`. |
+[PyTorch 2.8 Module](https://docs.pytorch.org/docs/2.8/generated/torch.nn.Module.html), [Linear](https://docs.pytorch.org/docs/2.8/generated/torch.nn.Linear.html), [Sigmoid](https://docs.pytorch.org/docs/2.8/generated/torch.nn.Sigmoid.html), [NumPy mean](https://numpy.org/doc/2.2/reference/generated/numpy.mean.html).
 
-Flattening is **row-major**: the first eight values are the first row of the
-original `8 × 8` image, then the second row, and so on. There is no separate
-channel axis in this function. Preserve the one-image batch axis throughout.
+## TODO4 — code refinement API
 
-The supplied local model API is:
+`refine_code(model,noisy,steps,rate)` optimizes only the initial encoded coordinates, against the noisy input, with the fixed pretrained decoder. Inputs/return are defined beside the TODO. `tensor.detach()` returns a view disconnected from the old autograd graph; do not mutate that storage. `.requires_grad_(True)` enables derivatives on the new code. `torch.autograd.grad(loss,inputs)` returns a tuple of gradients for the requested input tensors; with one code tensor, element0 has its shape. It does not accumulate `.grad` on model parameters. Keep a fresh detached code after every update to bound graph history. Decode the final code and detach the returned reconstruction. The runner uses rate.1 and steps0/20/80. A zero-update result must equal the original encoded reconstruction, not the noisy input. Do not call loss.backward(), change model flags/weights, or optimize against the clean target.
 
-| Callable | Accepted input | Returned value |
-| --- | --- | --- |
-| `model.encoder(values)` | CPU float32 tensor with shape `(1, 64)` in normalized intensity units. | CPU float32 tensor with shape `(1, k)`: latent features. These coordinates need not be in `[0, 1]` and are not class scores. |
-| `model.decoder(code)` | The encoder's CPU float32 tensor with shape `(1, k)`. | CPU float32 tensor with shape `(1, 64)`: reconstructed intensities in `[0, 1]`, due to the supplied final sigmoid layer. |
+Plots compare noisy input, initial reconstruction and refined reconstruction; separate measured MSEs against noisy and clean images reveal their different objectives. Fitting the noisy image can preserve corruption; code fitting at inference is not weight training.
 
-A module is a callable object: generic syntax `layer(values)` runs a supplied
-layer's forward computation. Accessing an attribute without calling it gives the
-module object, not its output. The defining route is
-
-$$z=f(x_{noisy}),\qquad \hat x=g(z).$$
-
-`f` is the encoder, `g` the decoder, `z` the `k`-coordinate code, and `x_hat` the
-reconstruction. Return that reconstruction as a CPU tensor of shape `(1, 64)`.
-Do not return the code, the model object, a NumPy array or a reshaped `8 × 8`
-image. Keep the input and weights unchanged. The runner already disables gradient
-recording; device movement, fitting, `.backward()` and `.detach()` are not part of
-this TODO. Different latent widths are supplied through the model, so avoid
-hard-coding the code length.
-
-### TODO 2: `pixel_mse(clean, reconstruction)`
-
-This function receives **NumPy arrays**, not the tensors passed to TODO 1. The
-runner performs that conversion for you after inference. Both arrays have the
-same nonempty shape and corresponding finite numeric entries. In the live run
-they are float32 arrays of shape `(1, 64)` in normalized intensity units `[0, 1]`;
-a small arithmetic check may use a one-dimensional or smaller matching array.
-
-`clean` is the original reference before corruption. `reconstruction` is the
-model's output for the noisy input. Compare each reconstruction against `clean`,
-not against the corrupted input. No element may be reordered or changed.
-
-The **mean squared error** (MSE) is
-
-$$\mathrm{MSE}=\frac{1}{d}\sum_{j=1}^{d}(x_j-\hat x_j)^2.$$
-
-`d` is the total number of compared entries (64 in one live image), `x_j` is a
-clean pixel and `x_hat_j` the reconstruction at the same position. Squaring makes
-positive/negative errors contribute positively; the mean divides by the number
-of entries. Return one finite nonnegative Python/NumPy numeric scalar, in
-**normalized intensity squared** units. Identical arrays have MSE zero. A
-coordinate error map retains positions; this function reduces it to one number.
-There are no missing pixels, empty arrays or shape mismatches in the supplied
-domain, so no masking or defensive input policy is required.
-
-**NumPy toolbox:** matching-array subtraction and `**` exponentiation act on
-corresponding entries. `np.mean(a, axis=None)` averages all entries and returns a
-scalar; an explicit axis can leave a vector. `np` is already imported in the
-editable cell. No tensor conversion or file loading belongs in this function.
-
-### Before running and reading the evidence
-
-Replace only `output=None` and `error=None` in their marked regions, keeping
-function signatures/return lines. Rerun with **Shift+Enter**. The prepared runner
-calls your reconstruction for both `clean` and `denoise` checkpoints at the
-selected width, then calls your metric on each result. `None` leaves a waiting
-message. A shape/finite-value check is a guard, not proof that the right arrays
-were compared: verify the mean convention on your small hand example.
-
-The clean-trained checkpoint learned clean-input/clean-target reconstruction;
-the denoising checkpoint learned noisy-input/clean-target reconstruction with
-training noise standard deviation `0.25`. Both receive the current noisy image at
-inference. The same row and random seed keep the corruption controlled. Changing
-the **noise standard deviation** scales noise in normalized-intensity units;
-it does not update model weights. Width changes select separately trained models.
-
-In the report, `clean_target_mse` maps `clean` and `denoise` to your scalar errors;
-`noisy_input_mse` gives the corrupted-input error against the same clean target.
-`latent_width` counts code coordinates and `coordinate_ratio` is `64/k`, a
-coordinate-count ratio, not a compressed file size or bitrate. Inspect a chosen
-stroke in the images/error maps alongside the scalar: background pixels can hide
-a lost detail in an average. Distinct checkpoint histories limit causal claims
-about width alone.
-
-**Version-matched official references:** [PyTorch 2.8 Module calls](https://docs.pytorch.org/docs/2.8/generated/torch.nn.Module.html),
-[PyTorch 2.8 Sigmoid](https://docs.pytorch.org/docs/2.8/generated/torch.nn.Sigmoid.html),
-[NumPy 2.2 mean](https://numpy.org/doc/2.2/reference/generated/numpy.mean.html),
-[NumPy array arithmetic](https://numpy.org/doc/2.2/user/quickstart.html#basic-operations).
-
-The same guide is displayed immediately before the editable notebook cell. Complete only the marked TODO regions; the implementation remains your work.
+[PyTorch2.8 autograd.grad](https://docs.pytorch.org/docs/2.8/generated/torch.autograd.grad.html), [detach](https://docs.pytorch.org/docs/2.8/generated/torch.Tensor.detach.html).

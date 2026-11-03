@@ -72,18 +72,20 @@ def cnn_inspect(response,output_size,index=0,stride=1):
     report={'image_id':int(ids[index]),'target':int(y[index]),'prediction':int(scores.argmax(1)),'patch_response':float(value),'predicted_spatial_size':int(predicted),'actual_stride_shape':list(actual.shape),'tiny_trace':trace,'vgg_partial_trace':vtrace,'vgg_full_trace':json.loads((ASSETS/'vgg16-full-shape-trace.json').read_text(encoding='utf-8')),'note':'The isolated stride probe and fixed conv1 panel share a color scale. The full pretrained trace keeps its original stride; only the isolated probe changes stride. VGG digit preview is out of ImageNet domain; first two blocks only.'}
     return report,fig
 
-def train_candidate(config,epochs=24):
+def train_candidate(config,epochs=24,objective=None):
     cfg=dict(config)
     if set(cfg)!={'learning_rate','penalty'}:raise ValueError('Configuration needs exactly learning_rate and penalty.')
     rate=float(cfg['learning_rate']);penalty=float(cfg['penalty'])
     if not .00001<=rate<=.1 or not 0<=penalty<=.1:raise ValueError('Use a finite rate from 0.00001 to0.1 and penalty from0 to0.1.')
     torch.manual_seed(42);model=tiny_model();x,y,ids,tr,va,te=target_data()
-    optimizer=torch.optim.SGD(model.parameters(),lr=rate)
+    optimizer=torch.optim.SGD(model.parameters(),lr=rate,weight_decay=2*penalty if objective is None else 0.)
     curves={'train_loss':[],'validation_loss':[],'validation_accuracy':[]}
     for epoch in range(epochs):
         model.train();optimizer.zero_grad();logits=model(x[tr]);data_loss=nn.functional.cross_entropy(logits,y[tr])
-        regularizer=sum(p.square().sum() for name,p in model.named_parameters() if name.endswith('weight'))
-        (data_loss+penalty*regularizer).backward();optimizer.step()
+        loss=data_loss if objective is None else objective(logits,y[tr],[p for n,p in model.named_parameters() if n.endswith('weight')],penalty)
+        if loss is None:return None
+        if not isinstance(loss,torch.Tensor) or loss.ndim!=0 or not torch.isfinite(loss):raise ValueError('Objective must return one finite differentiable scalar tensor.')
+        loss.backward();optimizer.step()
         model.eval()
         with torch.no_grad():
             train_logits=model(x[tr]);val_logits=model(x[va])
@@ -92,11 +94,13 @@ def train_candidate(config,epochs=24):
             curves['validation_accuracy'].append(float((val_logits.argmax(1)==y[va]).float().mean()))
     return {'config':cfg,'curves':curves,'validation_loss':curves['validation_loss'][-1],'validation_accuracy':curves['validation_accuracy'][-1],'epochs':epochs,'seed':42},model
 
-def compare_runs(config):
+def compare_runs(config,objective=None):
     if config is None:return None
     baseline={'learning_rate':.01,'penalty':0.0}
     if sum(float(config.get(k,-1))!=v for k,v in baseline.items())!=1:raise ValueError('Change exactly one of learning_rate or penalty from the baseline.')
-    ar,am=train_candidate(baseline);br,bm=train_candidate(config)
+    a=train_candidate(baseline,objective=objective);b=train_candidate(config,objective=objective)
+    if a is None or b is None:return None
+    ar,am=a;br,bm=b
     return [ar,br],[am,bm]
 
 def selection_index(selection,runs):
@@ -121,7 +125,7 @@ def training_figure(reports, title="Live short CPU runs"):
     axes[1].set(title='Validation accuracy',xlabel='epochs',ylabel='fraction',ylim=(0,1));axes[1].legend(fontsize=7)
     return fig
 
-def adapt(head_classes,trainable_groups,epochs=35):
+def adapt(head_classes,trainable_groups,epochs=35,configure=None,audit=None):
     if head_classes is None or trainable_groups is None:return None
     if not isinstance(head_classes,int) or head_classes<1:raise ValueError('Head width must be a positive integer.')
     if set(trainable_groups)!={'conv1','conv2','head'} or not all(type(v) is bool for v in trainable_groups.values()):raise ValueError('Return booleans for conv1,conv2,head.')
@@ -135,7 +139,12 @@ def adapt(head_classes,trainable_groups,epochs=35):
     for epoch in range(epochs):
         opt.zero_grad();loss=nn.functional.cross_entropy(base.head(features[tr]),target[tr]);loss.backward();opt.step()
     frozen=copy.deepcopy(base).eval();fine=copy.deepcopy(base);before={n:p.detach().clone() for n,p in fine.named_parameters()}
-    for name,p in fine.named_parameters():p.requires_grad=trainable_groups[name.split('.')[0]]
+    if configure is None:return None
+    configured=configure(fine)
+    if configured is None:return None
+    if configured is not fine:raise ValueError('Configure and return the supplied model, preserving its weights.')
+    for name,p in fine.named_parameters():
+        if p.requires_grad != trainable_groups[name.split('.')[0]]:raise ValueError('Keep conv1 frozen; enable conv2 and head.')
     parameter_groups=[{'params':[p for p in getattr(fine,name).parameters() if p.requires_grad], 'lr':.02 if name=='head' else .001} for name,enabled in trainable_groups.items() if enabled]
     opt=torch.optim.SGD(parameter_groups)
     for epoch in range(12):
@@ -145,7 +154,11 @@ def adapt(head_classes,trainable_groups,epochs=35):
         with torch.no_grad():logits=model(x[va]);pred=logits.argmax(1)
         predictions_by_route[name]=pred.tolist()
         rows.append({'route':name,'trainable_parameters':sum(p.numel() for p in model.parameters() if p.requires_grad),'validation_loss':float(nn.functional.cross_entropy(logits,target[va])),'validation_accuracy':float((pred==target[va]).float().mean())})
-    deltas={n:float((p-before[n]).detach().abs().max()) for n,p in fine.named_parameters()}
+    after={n:p.detach().clone() for n,p in fine.named_parameters()}
+    if audit is None:return None
+    deltas=audit(before,after)
+    if deltas is None:return None
+    if set(deltas)!=set(before) or not all(np.isscalar(v) and np.isfinite(v) and v>=0 for v in deltas.values()):raise ValueError('Audit needs a finite nonnegative maximum delta per tensor name.')
     return {'routes':rows,'fine_tune_max_absolute_delta':deltas,'trainable_names':[n for n,p in fine.named_parameters() if p.requires_grad],'source_target_disjoint':True,'source_task':'10-class digits','target_task':'even/odd','validation_predictions':pred.tolist(),'validation_predictions_by_route':predictions_by_route,'validation_comparison':[{'image_id':int(ids[i]),'target':int(target[i]),'head_only':predictions_by_route['Frozen features'][j],'last_block':predictions_by_route['Last-block fine-tune'][j],'changed':predictions_by_route['Frozen features'][j]!=predictions_by_route['Last-block fine-tune'][j]} for j,i in enumerate(va)],'validation_targets':target[va].tolist(),'validation_ids':[int(i) for i in ids[va]],'budgets':{'head_epochs':epochs,'fine_tune_epochs':12},'seed':42}
 
 def adaptation_figure(report):
@@ -212,7 +225,7 @@ def detector_inference(image_id,offline=False):
     outputs={'YOLO11n':[{'id':f'yolo-{i}','label':yr.names[int(b.cls.item())],'score':float(b.conf.item()),'box':[float(v) for v in b.xyxy[0]]} for i,b in enumerate(yr.boxes)],'SSDLite320':[{'id':f'ssd-{i}','label':weights.meta['categories'][int(label)],'score':float(score),'box':[float(v) for v in box]} for i,(box,score,label) in enumerate(zip(sr['boxes'],sr['scores'],sr['labels']))]}
     return outputs,{'YOLO11n':yseconds,'SSDLite320':sseconds}
 
-def inspect_detections(filter_scores,iou,image_id,cutoff,nms_cutoff,live=None):
+def inspect_detections(filter_scores,iou,image_id,cutoff,nms_cutoff,live=None,suppress=None):
     import matplotlib.pyplot as plt
     from matplotlib.patches import Rectangle
     from PIL import Image
@@ -229,6 +242,10 @@ def inspect_detections(filter_scores,iou,image_id,cutoff,nms_cutoff,live=None):
         if filtered:
             classes={s:i for i,s in enumerate(sorted({d['label'] for d in filtered}))}
             indices=batched_nms(torch.tensor([d['box'] for d in filtered]),torch.tensor([d['score'] for d in filtered]),torch.tensor([classes[d['label']] for d in filtered]),nms_cutoff).tolist();kept=[filtered[i] for i in indices]
+        if suppress is not None:
+            kept=suppress(filtered,nms_cutoff)
+            if kept is None:return None
+            if not isinstance(kept,list) or any(d.get('id') not in source_ids for d in kept):raise ValueError('NMS returns a list of unchanged source records.')
         ax.imshow(Image.open(ASSETS/entry['image']));ax.set_title(name);ax.axis('off')
         for d in kept:
             x1,y1,x2,y2=d['box'];ax.add_patch(Rectangle((x1,y1),x2-x1,y2-y1,fill=False,edgecolor='orange',linewidth=1));ax.text(x1,y1,d['label']+f' {d["score"]:.2f}',fontsize=7,color='black',bbox={'facecolor':'white','alpha':.8})

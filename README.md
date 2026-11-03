@@ -2,11 +2,11 @@
 
 ## Exercise + breakout
 
-You have around 30 minutes for each supplied pair investigation in breakout rooms after guided setup. Each block folder has a `GROUP_TASK.md` with the comparison and shared output; the same task is visible at the top of its notebook. Keep the preceding slide takeaways beside the task. Predict, implement a small step, explore a controlled change and use the measured evidence to make a decision. Swap editor/checker and bring both the finding and a limitation back to plenary. Blocks with no notebook exercise have no separate breakout task.
+You have around 30 minutes for each pair investigation after guided setup. Implement the marked method or pipeline steps, compare a controlled change and inspect the computed plots. Each block folder has a short `GROUP_TASK.md` and a downloadable `TASK_API.md` with API details. Swap who edits. Keep your code and results for the trainer's solution walkthrough; no written prediction, observation log or group presentation is required. Blocks without a notebook have no separate breakout task.
 
 Day 1 contains four prepared marimo notebooks: clustering, dimensionality reduction, pixel segmentation and a tiny neural classifier. You need programming familiarity, but no GPU, API key or paid service. Day 1 needs no model downloads. Day 2 adds five practices: CNN/VGG inspection, controlled model improvement, transfer/fine-tuning, autoencoders and detection. Small pretrained teaching assets are bundled. The detection practice uses genuine YOLO11n and SSDLite320 pretrained models; its online preflight downloads their official weights into the local ignored cache. No GPU is required.
 
-[Choose a practice](exercises/README.md). Each scheduled exercise includes a pair investigation in breakout rooms, after guided preparation. Swap editor/checker roles during the investigation. Complete the short TODOs, compare one controlled change, then bring a prediction, measured result and limitation to plenary. The same task stays available in the notebook and its `GROUP_TASK.md`.
+[Choose a practice](exercises/README.md). The notebook and its `GROUP_TASK.md` give the coding task and comparison; expanded API details are separate. Brief prediction questions are mental checks, not written submissions.
 
 ## Get the workspace
 
@@ -45,11 +45,11 @@ Before class, run each Day 2 selector with `--check`, including Block 5 online t
 
 Day 3 selectors are **1,2,4,5**: deep masks, Siamese pairs, vision prompts, adaptation/deployment. Block3 uses presenter-led diagrams, with no notebook or breakout room. After shared sync: `uv run --locked python start.py --day 3 --block 1 --check`, then omit `--check` to open. Windows: `start.cmd --day 3 --block 2`; macOS/Linux: `sh ./start.sh --day 3 --block 2`. Use `--port 2724` if another day is running.
 
-Preflight all four selectors online. Block 4 needs approximately 1 GB of official CLIP/SAM weights on the first check; its progress completes before the notebook is opened. Then check `uv run --offline --locked python start.py --day 3 --block 4 --offline-assets --check`; add `--offline-assets` to its offline launch. All other Day 3 model assets are bundled. [Day 3 model/data provenance](cv_exercises/assets/day3/README.md). The four starters contain short concept TODOs with waiting states; support code performs genuine CPU computation, plotting and local serving. Save edited code and separately download observations, mask images and the reloadable inference ZIP. No Hub credentials or paid deployment is required.
+Preflight all four selectors online. Block 4 needs approximately 1 GB of official CLIP/SAM weights on the first check; its progress completes before the notebook is opened. Then check `uv run --offline --locked python start.py --day 3 --block 4 --offline-assets --check`; add `--offline-assets` to its offline launch. All other Day 3 model assets are bundled. [Day 3 model/data provenance](cv_exercises/assets/day3/README.md). The four starters contain short concept TODOs with waiting states; support code performs genuine CPU computation, plotting and local serving. Save edited code; optional downloads preserve computed results, mask images and the reloadable inference ZIP. No Hub credentials or paid deployment is required.
 
 ## Work, save and stop
 
-Open the TODO cell’s code control, edit the `None` placeholders and run with **Shift+Enter**. Waiting messages are expected in a fresh starter. The supplied controls and independent tasks remain usable. Save code with **Ctrl+S** (macOS: **Command+S**). Download findings to retain predictions, control settings, plots’ data and written observations; browser widget values are not stored by saving Python. Reloading restores saved code and default controls.
+Edit the visible TODO cells and run with **Shift+Enter**. Waiting messages are expected before completion. Save code with **Ctrl+S** (macOS: **Command+S**). Optional trial downloads retain control settings and computed measurements; saving Python does not save widget values. Reloading restores saved code and default controls.
 
 Leave the terminal open while working. Save and stop the current editor with **Ctrl+C** before selecting another day/block. Restart with the same selector. Use `--port 2721` if another notebook already uses 2720. Replace only the indicated TODOs before changing supplied plumbing.
 

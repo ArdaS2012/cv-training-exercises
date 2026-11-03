@@ -1,39 +1,15 @@
-# Exercise: defend a projection
+# Build and audit a projection
 
-**Exercise + breakout · CV Day 1 Block 2 · around 30 minutes in pairs**
+30 minutes in pairs; swap who edits.
 
-## Your mission
+From slides 19–22: center before projection; reconstruct to see lost information; 2D gaps do not establish classes.
 
-Choose an image compression budget: how few coordinates preserve the detail your user needs?
+1. Implement centering, basis selection, projection, reconstruction and pixel MSE. Compare k=1,8,32,64 using the same digit and error heatmap.
+2. Implement a minimum-rank selection rule. Compare variance targets 80% → 95%; inspect your chosen rank's reconstruction. Variance is not accuracy.
+3. Implement nearest-neighbour ranking with self excluded, then per-image neighbour retention. Keep audit q=5 fixed; compare supplied t-SNE/UMAP local scales 5 → 30. Inspect the original and 2D neighbours of the same image, then another image.
 
-## Keep these prior-slide takeaways beside the task
+“Local scale” supplies t-SNE perplexity (effective neighbourhood size) and UMAP n_neighbors (graph neighbour count). These differ; neither is a cluster count. Neighbours are similar image vectors, not adjacent pixels. Larger settings need not improve retention.
 
-Slides 23–28: center first; PCA uses SVD directions and discards components. Error and retained variance answer different questions; 2D gaps do not prove classes.
+Keep working code and plots for the trainer’s solution walkthrough. No written prediction, observation log or group presentation required. Trial download is optional.
 
-Why this helps: explain the mechanism before trusting a colorful output. Your partner must be able to reproduce the comparison from your settings and evidence.
-
-## Before the room opens
-
-Use [shared setup](../../README.md); launch checks and any warming happen before class. Start from the repository root with `uv run --locked python start.py --block 2`. Locate the supplied input, controls, TODOs and results; the conceptual implementation and investigation below belong to the room.
-
-## Definitions before coding
-
-The notebook displays the exact types, shapes, field meanings and return contracts beside every TODO. The same [input/output definitions and API references](README.md#todo-input-and-output-reference) are available here locally. Read those definitions before editing; you do not need to inspect private files or guess the data structure.
-
-## Investigate together
-
-1. Choose one visible detail in input row 0 that must survive compression; predict the smallest acceptable rank. Complete the three PCA expressions, checking 300×64 → 300×k → 300×64 shapes. Explain why the mean must be restored.
-
-2. Use the identical rows at k=1, 8 and 32. Log retained variance, MSE and whether that detail survives; save each run. Swap roles and choose the smallest tested rank meeting your declared goal, even when its plot looks less attractive.
-
-3. Run the supplied nonlinear views at neighbor setting 5 and 30 while keeping rows/seed fixed. Track a recognizable labelled region and describe what changed. Challenge a class-separation claim with evidence; explain why perplexity and UMAP neighbor count are different controls.
-
-## Bring back
-
-Three measured rank rows, a detail-preservation decision and a fixed-row neighborhood comparison with an interpretation limit.
-
-Use the notebook's evidence log; a final screenshot alone loses the comparison. Downloads contain current controls/measurements plus your cumulative written log, so save after each trial. Saving Python does not retain widget inputs. An unchanged or worse result is useful when you can explain it. If blocked, request a room visit through the trainer chat; inspect the supplied input/baseline together while help arrives.
-
-## Explain it to another pair
-
-“We predicted __ because __. We changed only __; the evidence was __. We choose __ for __, but cannot conclude __. Our next test would hold __ fixed and change __.”
+[Input/output and API reference](TASK_API.md).
