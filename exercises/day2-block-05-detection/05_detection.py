@@ -111,10 +111,15 @@ def _(day2, mo):
 def _(day2, image_id, mo, run_detectors):
     live_outputs=None
     inference_times=None
+    _status=day2.detector_status();_note=''
     if run_detectors.value:
-        try:live_outputs,inference_times=day2.detector_inference(image_id.value,offline=True)
-        except (ValueError,OSError,RuntimeError) as _e:mo.output.append(mo.md(str(_e)))
-    mo.md('Mode: actual CPU pretrained inference' if live_outputs is not None else 'Mode: measured pretrained snapshot; Run uses actual cached models.')
+        if not all(_status.values()):
+            _note=' **Live models are not cached on this computer**, so the snapshot stays active. Keep working with it: it holds the same models\' real outputs. To enable live runs later, run the online check once: `uv run --locked python start.py --day 2 --block 5 --check`.'
+        else:
+            try:live_outputs,inference_times=day2.detector_inference(image_id.value,offline=True)
+            except Exception as _e:_note=f' Live run failed ({type(_e).__name__}: {_e}); the snapshot stays active.'
+    _mode='Mode: actual CPU pretrained inference' if live_outputs is not None else 'Mode: measured pretrained snapshot (bundled real YOLO11n/SSDLite outputs).'
+    mo.md(_mode+(f" Inference seconds: {', '.join(f'{k} {v:.2f}' for k,v in inference_times.items())}." if inference_times else '')+_note)
     return inference_times, live_outputs
 
 
@@ -127,9 +132,43 @@ def _(box_iou, confidence_selection, cutoff, day2, image_id, live_outputs, mo, o
         else:
             _report,_figure=detection_result
             _counts=' · '.join(f"{k}: {v['input_candidates']} candidates → {v['above_cutoff']} filtered → {v['after_class_aware_nms']} NMS" for k,v in _report['models'].items())
-            mo.output.replace(mo.vstack([_figure,mo.md(_counts),mo.md('Orange = your kept boxes; green dashed = teaching references. Inspect a miss or duplicate.')]))
+            mo.output.replace(mo.vstack([_figure,mo.md(_counts),mo.md('Orange = your kept boxes; green dashed = teaching references.\n\n**Try:** (1) Confidence 0.5 → 0.2: which extra boxes appear, and are they duplicates or new objects? (2) NMS IoU 0.5 → 0.9: when do duplicates survive? (3) Find one reference that YOLO matches and SSD misses, or the reverse. What does that say about one image as evidence?')]))
     except (ValueError,TypeError,IndexError,KeyError) as _e:mo.output.replace(mo.md(str(_e)))
     return (detection_result,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 4 · Stretch: precision and recall over confidence
+    `precision_recall(report)`: one model's dict from the result above, keys `'reference_matches'` (list of dicts, one per teaching reference, each with `'match'`: bool, plus `'reference'`, `'class'`, `'best_iou'`, `'detection'`) and `'after_class_aware_nms'` (int, number of kept boxes, ≥ 0). Return a tuple of two Python floats `(precision, recall)`:
+
+    $\text{precision}=\frac{TP}{\text{kept}}$, $\;\text{recall}=\frac{TP}{\text{references}}$, TP = number of references with `match == True` (IoU ≥ 0.5, same class, one detection per reference). Define precision = 1.0 when nothing is kept. The supplied sweep calls it for cutoffs 0.1…0.9 with your current NMS threshold.
+    """)
+    return
+
+
+@app.cell
+def _():
+    def precision_recall(report):
+        # TODO 4 (stretch): count true positives, then two ratios.
+        values=None
+        # END TODO 4
+        return values
+    return (precision_recall,)
+
+
+@app.cell(hide_code=True)
+def _(box_iou, confidence_selection, day2, image_id, live_outputs, mo, overlap_cutoff, precision_recall, suppress):
+    pr_result=None
+    try:
+        pr_result=day2.pr_sweep(confidence_selection,box_iou,suppress,image_id.value,overlap_cutoff.value,precision_recall,live=live_outputs)
+        if pr_result is None:_v=mo.md('Optional: complete TODO 1–3 and TODO 4 for the precision/recall sweep.')
+        else:_v=mo.vstack([pr_result[1],mo.md("""
+    **Try:** (1) Which direction does a higher cutoff move each curve? (2) Where would you put the cutoff for a safety application that must not miss a person? (3) Average precision (AP) summarizes this curve per class; mAP averages AP over classes and IoU thresholds. Two images are far too few for a benchmark.""")])
+    except (ValueError,TypeError,KeyError,ZeroDivisionError) as _e:_v=mo.md(str(_e))
+    _v
+    return (pr_result,)
 
 
 @app.cell(hide_code=True)

@@ -1,7 +1,10 @@
 # Build a latent-space experiment
 
-30 minutes in pairs; swap who edits.
+40 minutes in pairs; swap who edits after each TODO.
 
-Connect encoder/decoder, implement pixel MSE and interpolate encoded coordinates. Compare clean/denoising reconstructions, width 4/16 and latent blends. Implement a bounded gradient loop that refines only the latent code against noisy input; inspect noisy-fit versus clean-target error.
+1. TODO 1–2: reconstruct and MSE; compare clean vs denoising models, k = 4 vs 16 (about 10 min).
+2. TODO 3: PCA via SVD; read the MSE-vs-k plot against the autoencoders (about 15 min).
+3. TODO 4: latent interpolation vs pixel mixing (about 8 min).
+4. Stretch TODO 5: latent-code refinement (remaining time).
 
-Keep your code and plots; the trainer presents the completed solution. No written prediction, observation log or group presentation. [Input/output and APIs](TASK_API.md).
+Short mental checks only ("Try:" lines in the notebook). Keep your code and plots; the trainer presents the completed solution. [Input/output and APIs](TASK_API.md).

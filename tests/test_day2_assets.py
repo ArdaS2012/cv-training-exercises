@@ -40,4 +40,19 @@ class Day2Assets(unittest.TestCase):
     def test_no_split_overlap(self):
         *_,tr,va,te=day2.target_data()
         self.assertFalse(set(tr)&set(va));self.assertFalse(set(tr)&set(te));self.assertFalse(set(va)&set(te))
+    def test_block2_small_split_and_controls(self):
+        x,y,ids,tr,va,te=day2.target_data();rows=day2.small_train_rows()
+        self.assertEqual(len(rows),50);self.assertTrue(set(rows)<=set(tr));self.assertEqual(sorted(np.bincount(y[rows].numpy())),[5]*10)
+        self.assertEqual(day2.candidate_config('penalty',.003),{'learning_rate':.01,'penalty':.003,'dropout':0.})
+        with self.assertRaises(ValueError):day2.candidate_config('penalty',0.)
+        self.assertIsNone(day2.compare_runs(day2.candidate_config('dropout',.5),lambda *a:None))
+    def test_dropout_model_loads_checkpoint(self):
+        import torch
+        model=day2.TinyCNN(dropout=.5);model.load_state_dict(day2.tiny_model().state_dict());model.eval()
+        x,*_=day2.target_data()
+        with torch.no_grad():self.assertTrue(torch.equal(model(x[:3]),day2.tiny_model()(x[:3])))
+    def test_unfinished_callbacks_wait(self):
+        self.assertIsNone(day2.adapt(lambda z,w,b:None,lambda m:m,lambda a,b:{}))
+        self.assertIsNone(day2.pca_vs_ae(lambda a,b,k:None,lambda a,b:0.))
+        self.assertEqual(set(day2.detector_status()),{'yolo','ssd'})
 if __name__=='__main__':unittest.main()

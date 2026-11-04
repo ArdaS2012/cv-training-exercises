@@ -1,7 +1,10 @@
-# Build a training objective
+# Make overfitting visible
 
-30 minutes in pairs; swap who edits.
+40 minutes in pairs; swap who edits after each TODO.
 
-Implement stable cross-entropy, a differentiable L2 objective and validation selection. Run controlled CPU trainings with your objective; compare one rate or penalty change, then evaluate the frozen choice on reserved test.
+1. TODO 1–2: cross-entropy and the L2 objective (about 15 min).
+2. TODO 3: early stopping, `best_epoch` (about 5 min).
+3. Controlled comparison (about 15 min): train baseline A against one changed factor B. Repeat with another seed. Try L2, then dropout.
+4. Open the reserved test once for the selected checkpoint (about 2 min).
 
-Keep your code and plots; the trainer presents the completed solution. No written prediction, observation log or group presentation. [Input/output and APIs](TASK_API.md).
+Short mental checks only ("Try:" lines in the notebook). Keep your code and plots; the trainer presents the completed solution. [Input/output and APIs](TASK_API.md).

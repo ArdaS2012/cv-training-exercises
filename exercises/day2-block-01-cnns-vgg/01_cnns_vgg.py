@@ -39,7 +39,9 @@ def _(day2, mo, plt):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Build a spatial filter and pooling operation, then inspect real pretrained CNN/VGG maps. Compare stride 1 → 2 on the same digit; no written answer needed.
+    Build a spatial filter, its output-size rule and pooling, then inspect real pretrained CNN/VGG maps. Compare stride 1 → 2 on the same digit. Fast pairs continue with receptive field and parameter counts (TODO 5–6).
+
+    **Slide takeaways:** one kernel = one template applied everywhere (weight sharing) · $n_{out}=\lfloor (n+2p-k)/s\rfloor+1$ · ReLU then max-pool keeps strong local evidence · stacked 3×3 layers grow the receptive field with fewer weights than one large kernel.
     """)
     return
 
@@ -66,18 +68,37 @@ def _(np):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### 2 · Slide the filter
-    `convolve(image,kernel,bias,stride,padding)`: float arrays `(H,W)` / `(Kh,Kw)`, scalar bias, positive integer stride and nonnegative integer zero padding per side. Return float array `(floor((H+2P-Kh)/S)+1, floor((W+2P-Kw)/S)+1)`. At least one window fits. Apply `patch_response` at every valid window; preserve inputs. `np.pad` and `np` are supplied.
+    ### 2 · Output size
+    `output_size(n,k,p,s)`: Python ints: input length n ≥ 1, kernel length k ≥ 1, zero padding p ≥ 0 per side, stride s ≥ 1, with n+2p ≥ k. Return Python `int` $\lfloor (n+2p-k)/s\rfloor+1$ for one spatial axis. Example schema: `output_size(5,3,0,2)` → 2.
     """)
     return
 
 
 @app.cell
-def _(np, patch_response):
-    def convolve(image,kernel,bias,stride,padding):
-        # TODO 2: pad, visit valid windows and store each response.
-        output=None
+def _():
+    def output_size(n,k,p,s):
+        # TODO 2: number of valid window positions along one axis.
+        size=None
         # END TODO 2
+        return size
+    return (output_size,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 3 · Slide the filter
+    `convolve(image,kernel,bias,stride,padding)`: float arrays `(H,W)` / `(Kh,Kw)`, scalar bias, positive integer stride and nonnegative integer zero padding per side. Return float array of shape `(output_size(H,Kh,P,S), output_size(W,Kw,P,S))`; window (i,j) starts at padded row i·S, column j·S. At least one window fits. Apply `patch_response` at every valid window; preserve inputs. `np.pad` and `np` are supplied.
+    """)
+    return
+
+
+@app.cell
+def _(np, output_size, patch_response):
+    def convolve(image,kernel,bias,stride,padding):
+        # TODO 3: pad, visit valid windows and store each response.
+        output=None
+        # END TODO 3
         return output
     return (convolve,)
 
@@ -85,7 +106,7 @@ def _(np, patch_response):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### 3 · Pool local responses
+    ### 4 · Pool local responses
     `pool2(values)`: finite nonnegative NumPy float array `(H,W)`, H,W ≥ 2. Return float `(H//2,W//2)` using maxima of nonoverlapping 2×2 windows; discard incomplete bottom/right edges. Preserve input. This follows supplied ReLU `maximum(response,0)`.
     """)
     return
@@ -94,9 +115,9 @@ def _(mo):
 @app.cell
 def _(np):
     def pool2(values):
-        # TODO 3: maximum per complete 2×2 window.
+        # TODO 4: maximum per complete 2×2 window.
         pooled=None
-        # END TODO 3
+        # END TODO 4
         return pooled
     return (pool2,)
 
@@ -120,7 +141,7 @@ def _(convolve, day2, image_index, mo, np, patch_response, plt, pool2, stride, t
     _bias=float(_model.conv1.bias[0].detach())
     _response=convolve(_image,_kernel,_bias,stride.value,1)
     if _response is None:
-        mo.output.replace(mo.md('Waiting: complete the three filter/pooling steps.'))
+        mo.output.replace(mo.md('Waiting: complete TODO 1–4 (response, output size, convolution, pooling).'))
     elif not isinstance(_response,np.ndarray) or _response.ndim!=2 or not np.isfinite(_response).all():
         mo.output.replace(mo.md('Convolve must return a finite 2D NumPy array.'))
     else:
@@ -135,10 +156,71 @@ def _(convolve, day2, image_index, mo, np, patch_response, plt, pool2, stride, t
                 _ax.imshow(_im,cmap='viridis');_ax.set_title(_title,fontsize=10);_ax.axis('off')
             manual_report={'shape':list(_response.shape),'conv_max_error':float(np.max(np.abs(_response-_reference))) if _response.shape==_reference.shape else None,'pool_max_error':float(np.max(np.abs(_pooled-_poolref))) if np.shape(_pooled)==np.shape(_poolref) else None}
             mo.output.replace(mo.vstack([_fig,mo.md(f'**Reference differences:** {manual_report}')]))
-            def _size(h,k,p,s):return (h+2*p-k)//s+1
-            cnn_result=day2.cnn_inspect(patch_response,_size,image_index.value,stride.value)
-            if cnn_result is not None:mo.output.append(cnn_result[1])
+            cnn_result=day2.cnn_inspect(patch_response,output_size,image_index.value,stride.value)
+            if cnn_result is not None:
+                _r=cnn_result[0]
+                mo.output.append(mo.vstack([mo.md(f"**Pretrained trace.** Your output_size predicts {_r['predicted_spatial_size']} per axis; PyTorch stride-{stride.value} map is {_r['actual_stride_shape'][-2:]}. TinyCNN predicts digit {_r['prediction']} (target {_r['target']}). Row 1–3: TinyCNN stages (channel 0); last panels: isolated stride probe and VGG-16 block 2."),cnn_result[1],mo.md("""
+    **Try:** (1) Stride 1 → 2: how many positions does the probe keep, and which thin strokes vanish? (2) Compare conv1 with relu1: which values disappear? (3) Pool halves height and width: what is kept, what is lost? (4) Move the digit slider: does the same kernel respond to the same stroke direction everywhere?""")]))
     return cnn_result, manual_report
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 5 · Stretch: receptive field
+    `receptive_field(layers)`: nonempty Python list of dicts, in forward order, each `{'kernel': int ≥ 1, 'stride': int ≥ 1}` (pooling counts as a layer with its window as kernel). Return Python `int` r: how many input pixels along one axis can influence one output value. Recurrence with jump j (input pixels between neighbouring outputs): start $r=1, j=1$; per layer $r \leftarrow r+(k-1)\,j$, then $j \leftarrow j\,s$. Padding does not change r. Example schema: `[{'kernel':3,'stride':1}]` → 3.
+    """)
+    return
+
+
+@app.cell
+def _():
+    def receptive_field(layers):
+        # TODO 5: apply the r/j recurrence layer by layer.
+        r=None
+        # END TODO 5
+        return r
+    return (receptive_field,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 6 · Stretch: parameter count
+    `conv_parameters(k,c_in,c_out)`: Python ints ≥ 1: square kernel size k, input channels, output channels. Return Python `int` = weights + biases of one `Conv2d(c_in,c_out,k)`: $k^2 c_{in} c_{out} + c_{out}$.
+    """)
+    return
+
+
+@app.cell
+def _():
+    def conv_parameters(k,c_in,c_out):
+        # TODO 6: weights plus one bias per output channel.
+        count=None
+        # END TODO 6
+        return count
+    return (conv_parameters,)
+
+
+@app.cell(hide_code=True)
+def _(conv_parameters, day2, mo, receptive_field):
+    _tiny=[{'kernel':3,'stride':1},{'kernel':2,'stride':2},{'kernel':3,'stride':1},{'kernel':2,'stride':2}]
+    _r=receptive_field(_tiny);_c=conv_parameters(3,1,8)
+    if _r is None or _c is None:
+        _v=mo.md('Optional: complete TODO 5–6 to compare receptive fields and parameter counts.')
+    else:
+        _m=day2.tiny_model()
+        _two=receptive_field([{'kernel':3,'stride':1}]*2);_five=receptive_field([{'kernel':5,'stride':1}])
+        _vgg=receptive_field(([{'kernel':3,'stride':1}]*2+[{'kernel':2,'stride':2}])*2)
+        _rows=[('TinyCNN conv1 (your count vs PyTorch)',f"{_c} vs {_m.conv1.weight.numel()+_m.conv1.bias.numel()}"),
+               ('TinyCNN conv2 (your count vs PyTorch)',f"{conv_parameters(3,8,12)} vs {_m.conv2.weight.numel()+_m.conv2.bias.numel()}"),
+               ('TinyCNN receptive field after pool2',f"{_r} px (input is 8 px wide)"),
+               ('VGG-16 receptive field after block 2',f"{_vgg} px"),
+               ('Two 3×3 vs one 5×5 receptive field',f"{_two} vs {_five} px"),
+               ('Two 3×3 vs one 5×5 parameters, 64→64 channels',f"{2*conv_parameters(3,64,64):,} vs {conv_parameters(5,64,64):,}")]
+        _v=mo.md('| Quantity | Value |\n|---|---:|\n'+'\n'.join(f'| {a} | {b} |' for a,b in _rows)+'\n\n**Try:** why did VGG prefer stacks of 3×3 kernels? Same receptive field, fewer weights, one more ReLU in between.')
+    _v
+    return
 
 
 @app.cell(hide_code=True)

@@ -38,7 +38,14 @@ def _(day2, plt):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Configure which pretrained tensors can learn, implement the new head calculation, then audit actual parameter changes. Source: ten digits; target score columns: 0 even, 1 odd.
+    **Problem.** A TinyCNN was pretrained on 1,497 other digit images for the 10-class task. Reuse it for a new task: **even vs odd** (target column 0 = even, 1 = odd), with 180 labelled rows. Two routes get the **same budget**: same pretrained body, same seeded new head, 150 full-batch Adam steps at rate 0.01.
+
+    - **Frozen features:** only the new head learns.
+    - **Last-block fine-tune:** conv2 and the head learn; conv1 stays frozen.
+
+    You write the head that both routes use, the freezing rule and the audit that proves what changed.
+
+    **Slide takeaways:** replace the head to match the new label space · freezing = no gradient updates · fine-tuning more layers adds capacity and risk · transfer only helps when source and target are related.
     """)
     return
 
@@ -47,7 +54,7 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     ### 1 · New head scores
-    `head_scores(features,weight,bias)`: CPU float tensors `(B,48)`, `(2,48)`, `(2,)`. Return differentiable logits `(B,2)` using $S=ZW^T+b$; rows are images, columns even/odd. Preserve tensors; `torch` is supplied.
+    `head_scores(features,weight,bias)`: CPU float tensors `(B,48)`, `(2,48)`, `(2,)`. Return differentiable logits `(B,2)` using $S=ZW^\top+b$; rows are images, columns even/odd. Both routes train **through your function**, so keep the autograd graph (no `.detach()`); preserve inputs. Operators: `@` is matrix multiply, `.T` transposes, `+` broadcasts the bias over rows.
     """)
     return
 
@@ -102,34 +109,55 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    run_adaptation=mo.ui.run_button(label='Fit head and fine-tune last block')
+    run_adaptation=mo.ui.run_button(label='Train both routes (150 steps each, about 2 s)')
     run_adaptation
     return (run_adaptation,)
 
 
 @app.cell(hide_code=True)
-def _(configure, day2, head_scores, mo, np, parameter_deltas, plt, run_adaptation, torch):
+def _(mo):
+    mo.md(r"""
+    ### 4 · Stretch: domain-shift probe
+    `shift(images)`: float tensor `(N,1,8,8)`, intensities 0..1 (dark background, bright strokes), N ≥ 1. Return a new tensor of the same shape with **inverted** intensities $x' = 1-x$ (bright background, dark strokes). Do not modify the input. Neither route sees inverted images during training; the table then reports accuracy on the inverted validation images.
+    """)
+    return
+
+
+@app.cell
+def _():
+    def shift(images):
+        # TODO 4 (stretch): invert every intensity.
+        shifted=None
+        # END TODO 4
+        return shifted
+    return (shift,)
+
+
+@app.cell(hide_code=True)
+def _(configure, day2, head_scores, mo, np, parameter_deltas, run_adaptation, shift, torch):
     adaptation_report=None
-    _model=day2.tiny_model()
     _features=torch.tensor(np.load(day2.ASSETS/'cached-features.npz')['features'][:4])
-    _head=torch.nn.Linear(48,2)
+    torch.manual_seed(0);_head=torch.nn.Linear(48,2)
     _scores=head_scores(_features,_head.weight,_head.bias)
     if _scores is None:
-        mo.output.replace(mo.md('Waiting: complete head scores, freezing and audit.'))
+        mo.output.replace(mo.md('Waiting: complete TODO 1–3 (head scores, freezing, audit).'))
     elif not isinstance(_scores,torch.Tensor) or _scores.shape!=(4,2):
         mo.output.replace(mo.md('Head scores must be a tensor (B,2).'))
     else:
         _gap=float((_scores-_head(_features)).detach().abs().max())
-        mo.output.replace(mo.md(f'**Head vs torch Linear max difference:** {_gap:.3g}. Press Run after completing freezing/audit.'))
+        mo.output.replace(mo.md(f'**Your head vs torch Linear, max difference:** {_gap:.3g}. Press Run after completing freezing and audit.'))
         if run_adaptation.value:
             try:
-                adaptation_report=day2.adapt(2,{'conv1':False,'conv2':True,'head':True},configure=configure,audit=parameter_deltas)
+                _probe=torch.zeros(1,1,8,8)
+                _use_shift=shift if shift(_probe) is not None else None
+                adaptation_report=day2.adapt(head_scores,configure,parameter_deltas,shift=_use_shift)
                 if adaptation_report is not None:
-                    _delta=adaptation_report['fine_tune_max_absolute_delta']
-                    _fig,_ax=plt.subplots(figsize=(9,2.8),layout='constrained')
-                    _ax.bar(list(_delta),list(_delta.values()));_ax.tick_params(axis='x',rotation=20);_ax.set(ylabel='max absolute weight change',title='Your before/after audit')
-                    mo.output.append(mo.vstack([_fig,day2.adaptation_figure(adaptation_report),mo.md('| Route | Trainable parameters | Validation loss | Accuracy |\n|---|---:|---:|---:|\n'+'\n'.join(f"| {r['route']} | {r['trainable_parameters']} | {r['validation_loss']:.4f} | {r['validation_accuracy']:.3f} |" for r in adaptation_report['routes']))]))
-                else:mo.output.append(mo.md('Configure/audit unfinished.'))
+                    _cols='| Route | Trainable parameters | Update steps | Validation loss | Validation accuracy |'+(' Inverted accuracy |' if _use_shift else '')
+                    _sep='|---|---:|---:|---:|---:|'+('---:|' if _use_shift else '')
+                    _rows=[f"| {r['route']} | {r['trainable_parameters']} | {r['update_steps']} | {r['validation_loss']:.3f} | {r['validation_accuracy']:.3f} |"+(f" {r['shifted_validation_accuracy']:.3f} |" if _use_shift else '') for r in adaptation_report['routes']]
+                    mo.output.append(mo.vstack([day2.delta_figure(adaptation_report['fine_tune_max_absolute_delta']),mo.md('\n'.join([_cols,_sep]+_rows)),mo.md(f"Validation images: {sum(r['changed'] for r in adaptation_report['validation_comparison'])} of 60 predictions differ between the routes; those come first."),day2.adaptation_figure(adaptation_report),mo.md("""
+    **Try:** (1) Which tensors show 0? That is your freezing rule working. (2) The fine-tune route trains about 10× more parameters with the same 150 steps: what did that buy on validation? (3) Is 60 validation images enough to call a 3-point difference real? (4) Stretch: with inverted digits, chance level is 0.5. What does a result below 0.5 say about features that were learned on dark backgrounds?""")]))
+                else:mo.output.append(mo.md('Configure or audit unfinished: return the model / the delta dictionary.'))
             except (ValueError,TypeError,RuntimeError,KeyError) as _e:mo.output.append(mo.md(str(_e)))
     return (adaptation_report,)
 

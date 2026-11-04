@@ -28,15 +28,15 @@ Four visual coding challenges. Start with the picture and first TODO; open the A
 Use `--day 2` with the shared launcher. Follow the README in each owning block;
 all definitions needed for the student task are included in that block and notebook.
 
-Each investigation below has **around 30 minutes in pairs**. Guided handoff and plenary review are separate; follow the trainer’s announced return time and the matching `GROUP_TASK.md`.
+Blocks 1, 3 and 5 have **around 30 minutes in pairs**; Blocks 2 and 4 have **around 40 minutes**. Guided handoff and plenary review are separate; follow the trainer’s announced return time and the matching `GROUP_TASK.md`.
 
 | Block | Practice | You implement |
 |---|---|---|
-| 1 | [CNNs and VGG](day2-block-01-cnns-vgg/README.md) | Filter response, spatial convolution and pooling |
-| 2 | [Model improvement](day2-block-02-model-improvement/README.md) | Cross-entropy, regularized objective and validation choice |
-| 3 | [Transfer and fine-tuning](day2-block-03-transfer/README.md) | Task head, trainable layers and parameter-change audit |
-| 4 | [Autoencoders](day2-block-04-autoencoders/README.md) | Reconstruction, error, interpolation and latent-code updates |
-| 5 | [Detection](day2-block-05-detection/README.md) | Confidence filtering, IoU and class-aware NMS |
+| 1 | [CNNs and VGG](day2-block-01-cnns-vgg/README.md) | Filter response, output size, spatial convolution and pooling; stretch: receptive field, parameter count |
+| 2 | [Model improvement](day2-block-02-model-improvement/README.md) | Cross-entropy, L2 objective and early stopping; controlled L2/dropout/rate comparison on 50 training images |
+| 3 | [Transfer and fine-tuning](day2-block-03-transfer/README.md) | Task head, trainable layers and parameter-change audit under an equal budget; stretch: domain-shift probe |
+| 4 | [Autoencoders](day2-block-04-autoencoders/README.md) | Reconstruction, error, PCA baseline via SVD and interpolation; stretch: latent-code updates |
+| 5 | [Detection](day2-block-05-detection/README.md) | Confidence filtering, IoU and class-aware NMS; stretch: precision/recall sweep |
 
 ## Day 3 — advanced vision
 

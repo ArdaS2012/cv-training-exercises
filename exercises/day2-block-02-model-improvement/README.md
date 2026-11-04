@@ -1,7 +1,7 @@
-# Build a training objective
+# Make overfitting visible
 
 `uv run --locked python start.py --day 2 --block 2`
 
-Implement stable cross-entropy, a differentiable L2 objective and validation selection. Run controlled CPU trainings with your objective; compare one rate or penalty change, then evaluate the frozen choice on reserved test.
+A randomly initialized TinyCNN trains on only 50 digit images. Implement stable cross-entropy, an L2-regularized objective and early stopping. Then run a controlled comparison: baseline against one changed factor (L2, dropout or learning rate), same seed and data. Select a checkpoint on validation and open the reserved test once.
 
-30 minutes in pairs. Keep code and computed plots for the trainer solution walkthrough; no written predictions/observations or group reports. [Coding/API reference](TASK_API.md) · [Pair task](GROUP_TASK.md).
+40 minutes in pairs; swap who edits. Keep code and plots for the trainer solution walkthrough; no written predictions or reports. [Coding/API reference](TASK_API.md) · [Pair task](GROUP_TASK.md).

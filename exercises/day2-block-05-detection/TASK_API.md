@@ -11,3 +11,11 @@ Python sorted(records,key=...) returns a new stable list; equal keys preserve or
 Compare confidence .5→.7 with NMS fixed, then NMS .3→.7 at fixed confidence. Postprocessing cannot invent missing candidates.
 
 [Python stable sorting](https://docs.python.org/3.12/howto/sorting.html), [Torchvision 0.23 box_iou](https://docs.pytorch.org/vision/0.23/generated/torchvision.ops.box_iou.html), [batched_nms](https://docs.pytorch.org/vision/0.23/generated/torchvision.ops.batched_nms.html).
+
+## TODO 4 (stretch) — `precision_recall(report)`
+
+`report`: one model's dict from `detection_result[0]['models'][name]`: `'reference_matches'` (list, one dict per teaching reference: `'reference'` str, `'class'` str, `'best_iou'` float, `'match'` bool, `'detection'` str or None) and `'after_class_aware_nms'` (int ≥ 0, kept boxes). Return `(precision, recall)`, two Python floats in [0,1]: precision = TP / kept (1.0 if kept = 0), recall = TP / number of references, TP = count of `match == True`. `day2.pr_sweep(...)` calls it for confidence cutoffs 0.1…0.9 at your NMS threshold and plots precision against recall for both models. COCO-style AP/mAP: [COCO detection evaluation](https://cocodataset.org/#detection-eval).
+
+## Live detectors
+
+"Run actual YOLO and SSD" uses cached weights only. If the online check was skipped on this computer, the notebook says so and keeps the measured snapshot, which contains the same models' real outputs. Enable live runs with the online check once: `uv run --locked python start.py --day 2 --block 5 --check`.
