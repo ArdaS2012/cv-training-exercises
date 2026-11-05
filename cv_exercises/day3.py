@@ -38,12 +38,16 @@ def segmentation_report(select_mask,overlap,index=0,class_id=1):
  for ax,(title,arr) in zip(axes.flat,panels):ax.imshow(arr,cmap='tab10' if arr.ndim==2 else None);ax.set_title(title);ax.axis('off')
  report=dict(scene=s['name'],class_id=class_id,metrics={k:float(v) for k,v in metrics.items()},instance_ids=np.unique(s['instance']).tolist(),predicted_instance_count=int((np.unique(s['instance'])>0).sum()),reference_instance_count=int(s['reference_instance'].max()),scope='Authored geometric scenes; independently pretrained semantic/center U-Nets with supplied watershed. Not Mask R-CNN or natural-photo quality.')
  return report,fig,s
-def pairs():
- d=np.load(ASSETS/'pairs.npz');model=load_checkpoint('siamese.pt',PairEncoder())
+def pairs(noise=0.):
+ """Pair images and shared-encoder embeddings. noise>0 adds fixed-seed Gaussian pixel noise (std = noise × max pixel) to both images, clipped to the pixel range, before encoding."""
+ d=dict(np.load(ASSETS/'pairs.npz'));model=load_checkpoint('siamese.pt',PairEncoder())
+ if noise>0:
+  rng=np.random.default_rng(0);top=float(d['a'].max())
+  for key in ['a','b']:d[key]=np.clip(d[key]+rng.normal(0,noise,d[key].shape)*top,0,top).astype(np.float32)
  with torch.no_grad():a=model(torch.tensor(d['a'],dtype=torch.float32)).numpy();b=model(torch.tensor(d['b'],dtype=torch.float32)).numpy()
  return d,a,b
-def pair_report(distance,contrastive,threshold=.7):
- d,a,b=pairs();dist=distance(a,b)
+def pair_report(distance,contrastive,threshold=.7,noise=0.):
+ d,a,b=pairs(noise);dist=distance(a,b)
  if dist is None:return None
  dist=np.asarray(dist,dtype=float)
  if dist.shape!=(len(a),) or not np.isfinite(dist).all() or (dist<0).any():raise ValueError('Return one finite nonnegative distance per pair.')

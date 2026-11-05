@@ -44,9 +44,9 @@ Each pair investigation has **around 30 minutes**, after its guided handoff. The
 
 | Block | Practice | You implement |
 |---|---|---|
-| 1 | [Deep segmentation](day3-block-01-segmentation/README.md) | Class masks, overlap and connected components |
-| 2 | [Siamese pairs](day3-block-02-siamese/README.md) | Distances, contrastive loss/update and threshold errors |
-| 4 | [Vision prompts](day3-block-04-prompts/README.md) | Cosine scores, candidate softmax and spatial coordinates |
-| 5 | [Adaptation and deployment](day3-block-05-deployment/README.md) | Adaptation config, preprocessing, response and reload checks |
+| 1 | [Deep segmentation](day3-block-01-segmentation/README.md) | Class masks, overlap, connected components; stretch instance matching |
+| 2 | [Siamese pairs](day3-block-02-siamese/README.md) | Distances, contrastive loss/update, threshold errors on clean/noisy pairs; stretch cutoff choice |
+| 4 | [Vision prompts](day3-block-04-prompts/README.md) | Cosine scores, candidate softmax, spatial coordinates; stretch box prompt |
+| 5 | [Adaptation and deployment](day3-block-05-deployment/README.md) | Adaptation config, preprocessing, response, reload checks; stretch batching |
 
 Block 3 has a presenter-led architecture comparison and no exercise or breakout rooms. Use the shared root setup; selectors `--day 3 --block 1|2|4|5`.

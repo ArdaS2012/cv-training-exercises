@@ -27,6 +27,16 @@ def _(mo, reference):
 
 @app.cell(hide_code=True)
 def _(mo):
+    mo.md(r"""
+    Build CLIP's candidate scoring and SAM's coordinate input, then compare text and spatial prompts with the other route fixed. Fast pairs continue with a box prompt (TODO 4).
+
+    **Slide takeaways:** CLIP scores an image against *your* candidate texts: $s=\cos(f(x),g(t))$, then softmax over the candidates · the probabilities change when the candidate set changes · SAM takes points/boxes, not class names: $\hat M=D(E_I(x),E_P(p))$ · prompting changes inputs at inference, never the weights.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
     image_id=mo.ui.dropdown({'Bus':'bus','Football':'zidane'},value='Bus',label='Image')
     prompt_x=mo.ui.slider(0.,1.,step=.01,value=.44,show_value=True,label='Point x / width')
     prompt_y=mo.ui.slider(0.,1.,step=.01,value=.6,show_value=True,label='Point y / height')
@@ -61,9 +71,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def cosine(image, texts):
-        # TODO: calculate cosine similarity per candidate.
+        # TODO 1: calculate cosine similarity per candidate.
         result=None
-        # END TODO
+        # END TODO 1
         return result
     return (cosine,)
 
@@ -80,9 +90,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def probabilities(scores, scale):
-        # TODO: implement stable softmax over the scaled scores.
+        # TODO 2: implement stable softmax over the scaled scores.
         result=None
-        # END TODO
+        # END TODO 2
         return result
     return (probabilities,)
 
@@ -99,9 +109,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def pixel_prompt(points, labels, size):
-        # TODO: map normalized xy points into original-image pixel centers.
+        # TODO 3: map normalized xy points into original-image pixel centers.
         result=None
-        # END TODO
+        # END TODO 3
         return result
     return (pixel_prompt,)
 
@@ -110,7 +120,7 @@ def _(np, torch):
 def _(cosine, day3, description_style, image_id, mo, negative, np, pixel_prompt, plt, probabilities, prompt_x, prompt_y, run, torch):
     from PIL import Image
     prompt_result=None
-    _view=mo.md('Complete scoring and coordinate functions, then run. Model assets must be cached by preflight.')
+    _view=mo.md('Waiting: complete TODO 1–3 (cosine, softmax, pixel prompt), then press Run. Model assets must be cached by preflight.')
     if run.value:
         _name=image_id.value
         _candidates=['a photo of a bus','a photo of a bicycle','a photo of a person'] if _name=='bus' else ['a photo of a person','a photo of a football','a photo of a bus']
@@ -139,9 +149,50 @@ def _(cosine, day3, description_style, image_id, mo, negative, np, pixel_prompt,
                         _ax.imshow(_image);_ax.imshow(np.ma.masked_where(~_mask,_mask),alpha=.5,cmap='spring');_ax.set_title(_title);_ax.axis('off')
                         for (_x,_y),_lab in zip(_pr['points'],_pr['labels']):_ax.plot(_x,_y,'+' if _lab else 'x',color='lime' if _lab else 'red',markersize=9)
                     prompt_result={'image':_name,'candidates':_candidates,'cosines':np.asarray(_cos).tolist(),'scores':np.asarray(_scores).tolist(),'reference_scores':_api['scores'],'max_score_difference':float(np.max(np.abs(_scores-_api['scores']))),'prompt':_prompt,'baseline_mask_pixels':int(_base['mask'].sum()),'changed_mask_pixels':int(_changed['mask'].sum())}
-                    _view=mo.vstack([_fig,mo.md(f"**Max score difference:** {prompt_result['max_score_difference']:.3g} · baseline/changed mask pixels: {prompt_result['baseline_mask_pixels']} / {prompt_result['changed_mask_pixels']}"),mo.md('First compare bare/photo descriptions with geometry fixed. Restore the text; move one point, then add the negative point. The mask has no text class. Model quality scores are estimates; no reference mask is supplied.')])
+                    _view=mo.vstack([_fig,mo.md(f"**Max score difference:** {prompt_result['max_score_difference']:.3g} · baseline/changed mask pixels: {prompt_result['baseline_mask_pixels']} / {prompt_result['changed_mask_pixels']}"),mo.md('''Left: your candidate scores next to the Transformers reference (they should coincide). Middle/right: SAM mask for the fixed baseline point and for your point (+ include, × exclude). The mask carries no class name; SAM quality scores are model estimates, and no reference mask is supplied.
+
+**Try:** (1) Bare labels ↔ photo descriptions with geometry fixed: which score moves most? (2) Restore the text; move the point from the bus body to a window or a person: what does the mask become? (3) Add the negative point: which region disappears? (4) Why does adding or removing one candidate text change every probability?''')])
     _view
     return (prompt_result,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 4 · Stretch: box prompt
+    `pixel_box(box, size)`: `box` Python list `[x0, y0, x1, y1]` of normalized floats in [0,1] with x0 < x1 and y0 < y1 (top-left, bottom-right corner); `size`: `(W,H)` Python int tuple, W,H ≥ 2. Return a Python list of four floats in original-image pixels, same order: multiply x values by W−1 and y values by H−1, no rounding. Preserve inputs. `day3.spatial_mask({'box': pixel_box(...)}, image_id)` then returns `{'mask': bool (H,W), ...}` from SAM.
+    """)
+    return
+
+
+@app.cell
+def _(np, torch):
+    def pixel_box(box, size):
+        # TODO 4: map a normalized xyxy box to original-image pixels.
+        result=None
+        # END TODO 4
+        return result
+    return (pixel_box,)
+
+
+@app.cell(hide_code=True)
+def _(day3, image_id, mo, np, pixel_box, plt, run):
+    from PIL import Image as _Image
+    _boxes={'bus':[.05,.38,.31,.88],'zidane':[.55,.05,.95,.99]}
+    _img=_Image.open(day3.ASSETS/(image_id.value+'.jpg')).convert('RGB')
+    _b=pixel_box(_boxes[image_id.value],_img.size)
+    if _b is None:
+        _v=mo.md('Optional: complete TODO 4, then press Run to compare a box prompt with the point prompt.')
+    elif not run.value:
+        _v=mo.md('Press Run to compute the box-prompt mask.')
+    else:
+        _m=day3.spatial_mask({'box':_b},image_id.value)['mask']
+        _fig,_ax=plt.subplots(figsize=(4,3.5),layout='constrained')
+        _ax.imshow(_img);_ax.imshow(np.ma.masked_where(~_m,_m),alpha=.5,cmap='spring')
+        _ax.add_patch(plt.Rectangle((_b[0],_b[1]),_b[2]-_b[0],_b[3]-_b[1],fill=False,color='lime',lw=2));_ax.axis('off');_ax.set_title('Box prompt')
+        _v=mo.vstack([_fig,mo.md(f"**Box (pixels):** {[round(v,1) for v in _b]} · mask pixels {int(_m.sum())}.\n\n**Try:** compare with the point mask above. Which prompt is less ambiguous for this object, and why can neither tell SAM the class?")])
+    _v
+    return
 
 
 @app.cell(hide_code=True)

@@ -27,14 +27,25 @@ def _(mo, reference):
 
 @app.cell(hide_code=True)
 def _(mo):
-    threshold=mo.ui.slider(0.,2.,step=.05,value=.7,show_value=True,label='Match cutoff')
-    threshold
-    return (threshold,)
+    mo.md(r"""
+    Build the pair distance, the contrastive loss and the threshold decision of a Siamese model, then follow one loss gradient in embedding space. Compare cutoffs .4 → .7 → 1.0 on the same 24 real digit pairs, first clean, then with pixel noise. Fast pairs continue with choosing a cutoff (TODO 5).
+
+    **Slide takeaways:** one shared encoder $f_\theta$ for both images · $d=\lVert f_\theta(x_a)-f_\theta(x_b)\rVert_2$ · $L=y\,d^2+(1-y)\max(0,m-d)^2$ pulls similar pairs together and pushes different pairs to at least the margin · the cutoff is a decision rule chosen after training: lower → more missed matches, higher → more false matches.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
-def _(day3, plt):
-    pair_data, left, right=day3.pairs()
+def _(mo):
+    threshold=mo.ui.slider(0.,2.,step=.05,value=.7,show_value=True,label='Match cutoff')
+    pair_set=mo.ui.dropdown({'Clean pairs':0.,'Noisy pairs (σ = .3)':.3},value='Noisy pairs (σ = .3)',label='Pair set')
+    mo.hstack([pair_set,threshold])
+    return pair_set, threshold
+
+
+@app.cell(hide_code=True)
+def _(day3, pair_set, plt):
+    pair_data, left, right=day3.pairs(pair_set.value)
     _fig,_axes=plt.subplots(2,4,figsize=(7,3),layout='constrained')
     for _i in range(4):
         for _row,_key in enumerate(['a','b']):_axes[_row,_i].imshow(pair_data[_key][_i].reshape(8,8),cmap='gray');_axes[_row,_i].axis('off')
@@ -55,9 +66,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def distance(a, b):
-        # TODO: one Euclidean distance per matching row.
+        # TODO 1: one Euclidean distance per matching row.
         result=None
-        # END TODO
+        # END TODO 1
         return result
     return (distance,)
 
@@ -74,9 +85,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def contrastive(d, y, margin):
-        # TODO: calculate a loss for each pair.
+        # TODO 2: calculate a loss for each pair.
         result=None
-        # END TODO
+        # END TODO 2
         return result
     return (contrastive,)
 
@@ -93,9 +104,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def errors(d, y, cutoff):
-        # TODO: threshold the distances and count both error types.
+        # TODO 3: threshold the distances and count both error types.
         result=None
-        # END TODO
+        # END TODO 3
         return result
     return (errors,)
 
@@ -112,25 +123,25 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def embedding_step(a, b, d, y, margin, rate):
-        # TODO: apply one contrastive gradient step to the left embeddings.
+        # TODO 4: apply one contrastive gradient step to the left embeddings.
         result=None
-        # END TODO
+        # END TODO 4
         return result
     return (embedding_step,)
 
 
 @app.cell(hide_code=True)
-def _(contrastive, day3, distance, embedding_step, errors, left, mo, np, pair_data, plt, right, threshold):
+def _(contrastive, day3, distance, embedding_step, errors, left, mo, np, pair_data, pair_set, plt, right, threshold):
     pair_result=None
     _data,_a,_b=pair_data,left,right
     _dist=distance(_a,_b)
-    _view=mo.md('Waiting: pair distance, contrastive loss and threshold errors.')
+    _view=mo.md('Waiting: complete TODO 1–4 (distance, contrastive loss, threshold errors, embedding step).')
     if _dist is not None:
         _loss=contrastive(_dist,_data['similar'],1.)
         _counts=errors(_dist,_data['similar'],threshold.value)
         _moved=embedding_step(_a,_b,_dist,_data['similar'],1.,.1)
         if _loss is not None and _counts is not None and _moved is not None:
-            _prepared=day3.pair_report(distance,contrastive,threshold.value)
+            _prepared=day3.pair_report(distance,contrastive,threshold.value,pair_set.value)
             _cuts=np.linspace(0,2,41)
             _sweep=[errors(_dist,_data['similar'],float(_t)) for _t in _cuts]
             _fig,_axes=plt.subplots(1,3,figsize=(11,2.8),layout='constrained')
@@ -142,10 +153,44 @@ def _(contrastive, day3, distance, embedding_step, errors, left, mo, np, pair_da
             _axes[1].axvline(threshold.value,color='black');_axes[1].set(xlabel='Cutoff',ylabel='Pairs');_axes[1].legend()
             _after=contrastive(distance(_moved,_b),_data['similar'],1.)
             _axes[2].bar(['Before','After step'],[float(np.mean(_loss)),float(np.mean(_after))]);_axes[2].set(ylabel='Mean pair loss',title='Embedding step, rate .1')
-            pair_result={'loss_before':float(np.mean(_loss)),'loss_after_embedding_step':float(np.mean(_after)),'cutoff':threshold.value,'errors':_counts,'mean_loss':float(np.mean(_loss)),'pairs':_prepared[0]['pairs']}
-            _view=mo.vstack([_fig,_prepared[1],mo.md(f"**Errors at {threshold.value:.2f}:** {_counts} · mean loss {np.mean(_loss):.4f}"),mo.md('Compare cutoffs .4 → 1.0 on the same 24 pairs. The error curves use your function; the pair thumbnails expose individual failures. The fourth task moves embeddings directly, without updating the saved encoder; no test-accuracy claim.')])
+            pair_result={'pair_set':pair_set.value,'loss_before':float(np.mean(_loss)),'loss_after_embedding_step':float(np.mean(_after)),'cutoff':threshold.value,'errors':_counts,'mean_loss':float(np.mean(_loss)),'pairs':_prepared[0]['pairs']}
+            _view=mo.vstack([_fig,_prepared[1],mo.md(f"**Errors at {threshold.value:.2f}:** {_counts} · mean loss {np.mean(_loss):.4f}"),mo.md('''Left: distance histogram for similar (blue) and different (red) pairs with your cutoff. Middle: your false/missed counts over all cutoffs. Right: mean pair loss before/after one embedding step (rate .1). The step moves embeddings directly, not the saved encoder; no test-accuracy claim.
+
+**Try:** (1) Noisy pairs: move the cutoff .4 → .7 → 1.0. Which error type rises, which falls? Then switch to Clean pairs: why is every cutoff from .1 to 1.1 perfect? (2) Where do the two histograms overlap, and which pair thumbnails sit there? (3) Why does a different pair beyond the margin contribute zero loss? (4) Why did one embedding step lower the mean loss without changing any weight?''')])
     _view
     return (pair_result,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 5 · Stretch: choose a cutoff
+    `pick_cutoff(d, y, cutoffs)`: distances `d` float NumPy `(P,)` ≥ 0; aligned binary targets `y` NumPy `(P,)`, 1 = similar; `cutoffs`: nonempty float NumPy `(T,)` in ascending order. Accept a match when d ≤ cutoff. Return the Python `float` cutoff with the smallest total errors (false matches + missed matches); on ties return the first (smallest) such cutoff. Preserve inputs. Choosing a cutoff on these pairs makes them validation pairs: a fair error estimate needs fresh test pairs.
+    """)
+    return
+
+
+@app.cell
+def _(np, torch):
+    def pick_cutoff(d, y, cutoffs):
+        # TODO 5: choose the cutoff with the fewest total errors.
+        result=None
+        # END TODO 5
+        return result
+    return (pick_cutoff,)
+
+
+@app.cell(hide_code=True)
+def _(distance, errors, left, mo, np, pair_data, pick_cutoff, right):
+    _d=distance(left,right);_cuts=np.linspace(0,2,41)
+    _c=None if _d is None else pick_cutoff(_d,pair_data['similar'],_cuts)
+    if _c is None or errors(_d,pair_data['similar'],.7) is None:
+        _v=mo.md('Optional: complete TODO 1, 3 and 5 to choose a cutoff from the error counts.')
+    else:
+        _e=errors(_d,pair_data['similar'],_c)
+        _v=mo.md(f"**Selected cutoff:** {_c:.2f} · errors there: {_e} · largest similar distance {float(_d[pair_data['similar']==1].max()):.3f} · smallest different distance {float(_d[pair_data['similar']==0].min()):.3f}.\n\n**Try:** is the selected cutoff unique, or does a whole interval give the same errors? Which cutoff would you deploy if a false match were ten times worse than a missed match?")
+    _v
+    return
 
 
 @app.cell(hide_code=True)

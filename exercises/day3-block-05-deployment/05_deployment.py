@@ -27,6 +27,16 @@ def _(mo, reference):
 
 @app.cell(hide_code=True)
 def _(mo):
+    mo.md(r"""
+    Build the adaptation config, preprocessing, JSON response and contract check of a small served vision model; the training, saving, reloading and local HTTP server are supplied. Compare head learning rates .03 → .10 under the same 40-update budget. Fast pairs continue with batched requests (TODO 5).
+
+    **Slide takeaways:** adaptation $\theta'=\theta+\Delta\theta$ with frozen parts $\Delta\theta_F=0$ · inference contract $\hat y=\mathrm{postprocess}(f_{\theta'}(\mathrm{preprocess}(x)))$: scale, label map and revision belong to the saved package · uploading weights is not deployment: a running endpoint must reproduce the reloaded predictions · swapped label metadata gives the same numbers with the wrong meaning.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
     rate=mo.ui.slider(.01,.2,step=.01,value=.03,show_value=True,label='Head learning rate')
     run=mo.ui.run_button(label='Adapt, reload and test local HTTP')
     mo.hstack([rate,run])
@@ -54,9 +64,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def adaptation_config(rate):
-        # TODO: configure head-only tuning and label metadata.
+        # TODO 1: configure head-only tuning and label metadata.
         result=None
-        # END TODO
+        # END TODO 1
         return result
     return (adaptation_config,)
 
@@ -73,9 +83,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def preprocess(pixels, scale):
-        # TODO: convert raw pixels to the model tensor.
+        # TODO 2: convert raw pixels to the model tensor.
         result=None
-        # END TODO
+        # END TODO 2
         return result
     return (preprocess,)
 
@@ -92,9 +102,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def make_response(logits, id2label, revision):
-        # TODO: normalize logits and attach the saved label and revision.
+        # TODO 3: normalize logits and attach the saved label and revision.
         result=None
-        # END TODO
+        # END TODO 3
         return result
     return (make_response,)
 
@@ -111,9 +121,9 @@ def _(mo):
 @app.cell
 def _(np, torch):
     def same_response(before, after, atol):
-        # TODO: compare score values and response meaning.
+        # TODO 4: compare score values and response meaning.
         result=None
-        # END TODO
+        # END TODO 4
         return result
     return (same_response,)
 
@@ -129,7 +139,7 @@ def _(adaptation_config, day3, make_response, mo, np, plt, preprocess, rate, run
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
     from urllib.request import Request, urlopen
     package_result=None
-    _view=mo.md('Complete the four pipeline functions, then run. The HTTP handler uses your preprocessing and response functions.')
+    _view=mo.md('Waiting: complete TODO 1–4 (config, preprocess, response, contract check), then press Run. The HTTP handler uses your preprocessing and response functions.')
     _config=adaptation_config(rate.value)
     _probe=preprocess(np.zeros((8,8)),16.)
     _reply=make_response(torch.zeros((1,2)),{'0':'even','1':'odd'},'probe')
@@ -176,9 +186,48 @@ def _(adaptation_config, day3, make_response, mo, np, plt, preprocess, rate, run
         _axes[1].set_xticks(_positions,['source-like','shifted']);_axes[1].set(ylim=(0,1),title='Validation accuracy');_axes[1].legend(fontsize=8)
         _axes[2].bar(['even','odd'],_http['scores']);_axes[2].set(ylim=(0,1),title='Actual HTTP scores')
         package_result={'training':_report,'http_response':_http,'metadata_fault_response':_swapped,'checks':_checks}
-        _view=mo.vstack([_fig,mo.md(str(_checks)),mo.md(f"**HTTP label:** {_http['label']} · **same scores, swapped metadata label:** {_swapped['label']}"),mo.md('Compare rates .03 → .10 with the same 40-update budget and validation rows. Check frozen/head deltas in the optional trial. Correct reload and HTTP behavior do not establish hosted reliability or generalization.'),mo.download(_zip,filename='reproducible-vision-pipeline.zip',label='Download model package')])
+        _view=mo.vstack([_fig,mo.md(str(_checks)),mo.md(f"**HTTP label:** {_http['label']} · **same scores, swapped metadata label:** {_swapped['label']}"),mo.md('''Left: the real raw request. Middle: validation accuracy before/after head adaptation on source-like and shifted rows. Right: the scores returned over HTTP. The check line must show a numeric/semantic match and a failing swapped-label case. Correct reload and HTTP behavior do not establish hosted reliability or generalization.
+
+**Try:** (1) Rate .03 → .10 with the same 40 updates: which validation bar moves? (2) Why do the swapped-label scores equal the correct ones while the label is wrong? (3) Which saved fields would a Hugging Face model repo need so another machine reproduces this reply? (4) What should the server return for a 7×7 request?'''),mo.download(_zip,filename='reproducible-vision-pipeline.zip',label='Download model package')])
     _view
     return (package_result,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 5 · Stretch: batch requests
+    `batch_preprocess(batch, scale)`: nonempty Python list of B raw finite NumPy `(8,8)` arrays in [0,16]; `scale`: positive float (16). Return CPU torch float32 `(B,1,8,8)` (batch, channel, height, width), each image divided by scale exactly once, in list order. Preserve inputs. A server batches requests to use one forward pass; the predictions must equal those of single requests.
+    """)
+    return
+
+
+@app.cell
+def _(np, torch):
+    def batch_preprocess(batch, scale):
+        # TODO 5: stack raw requests into one model batch.
+        result=None
+        # END TODO 5
+        return result
+    return (batch_preprocess,)
+
+
+@app.cell(hide_code=True)
+def _(batch_preprocess, day3, mo, np, preprocess, torch):
+    _x,_y,_ids,_tr,_va,_te=day3.day2.target_data()
+    _requests=[np.asarray(_x[i,0])*16. for i in _va[:8]]
+    _batch=batch_preprocess(_requests,16.)
+    if _batch is None or preprocess(_requests[0],16.) is None:
+        _v=mo.md('Optional: complete TODO 2 and TODO 5 to compare one batched forward pass with eight single requests.')
+    elif not isinstance(_batch,torch.Tensor) or tuple(_batch.shape)!=(8,1,8,8):
+        _v=mo.md('batch_preprocess must return a float32 tensor of shape (B,1,8,8).')
+    else:
+        _model=day3.day2.tiny_model().eval()
+        with torch.no_grad():
+            _together=_model(_batch);_single=torch.cat([_model(preprocess(r,16.)) for r in _requests])
+        _v=mo.md(f"**Batch of 8 vs 8 single requests** (frozen Day 2 TinyCNN, 10 digit scores): max logit difference {float((_together-_single).abs().max()):.2e}; same predicted digits: {bool(torch.equal(_together.argmax(1),_single.argmax(1)))}.\n\n**Try:** why must batching never change a prediction? Which layer types would break this in training mode?")
+    _v
+    return
 
 
 @app.cell(hide_code=True)
