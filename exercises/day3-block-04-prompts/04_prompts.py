@@ -37,30 +37,6 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    image_id=mo.ui.dropdown({'Bus':'bus','Football':'zidane'},value='Bus',label='Image')
-    prompt_x=mo.ui.slider(0.,1.,step=.01,value=.44,show_value=True,label='Point x / width')
-    prompt_y=mo.ui.slider(0.,1.,step=.01,value=.6,show_value=True,label='Point y / height')
-    negative=mo.ui.checkbox(value=False,label='Add negative point')
-    run=mo.ui.run_button(label='Run CLIP and SAM')
-    mo.vstack([mo.hstack([image_id,negative]),mo.hstack([prompt_x,prompt_y]),run])
-    return image_id, negative, prompt_x, prompt_y, run
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    description_style=mo.ui.dropdown(['bare labels','photo descriptions'],value='photo descriptions',label='Text candidates')
-    description_style
-    return (description_style,)
-
-
-@app.cell(hide_code=True)
-def _(day3, image_id, mo):
-    mo.image(str(day3.ASSETS/(image_id.value+'.jpg')),width=420)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
     mo.md(r"""
     ### 1 · Score image–text alignment
     `image`: finite nonzero float NumPy `(D,)`; `texts`: finite nonzero-row float NumPy `(N,D)`, N=2–6, D≥1. Return float NumPy `(N,)`: $s_i=(v^Tt_i)/(\|v\|_2\|t_i\|_2)$ in candidate order. Vectors are dimensionless; normalize each text row separately. Preserve inputs; zero vectors are outside this task.
@@ -117,6 +93,52 @@ def _(np, torch):
 
 
 @app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### 4 · Stretch: box prompt
+    `pixel_box(box, size)`: `box` Python list `[x0, y0, x1, y1]` of normalized floats in [0,1] with x0 < x1 and y0 < y1 (top-left, bottom-right corner); `size`: `(W,H)` Python int tuple, W,H ≥ 2. Return a Python list of four floats in original-image pixels, same order: multiply x values by W−1 and y values by H−1, no rounding. Preserve inputs. `day3.spatial_mask({'box': pixel_box(...)}, image_id)` then returns `{'mask': bool (H,W), ...}` from SAM.
+    """)
+    return
+
+
+@app.cell
+def _(np, torch):
+    def pixel_box(box, size):
+        # TODO 4: map a normalized xyxy box to original-image pixels.
+        result=None
+        # END TODO 4
+        return result
+    return (pixel_box,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    image_id=mo.ui.dropdown({'Bus':'bus','Football':'zidane'},value='Bus',label='Image')
+    description_style=mo.ui.dropdown(['bare labels','photo descriptions'],value='photo descriptions',label='Text candidates')
+    prompt_x=mo.ui.slider(0.,1.,step=.01,value=.44,show_value=True,label='Point x / width')
+    prompt_y=mo.ui.slider(0.,1.,step=.01,value=.6,show_value=True,label='Point y / height')
+    negative=mo.ui.checkbox(value=False,label='Add negative point')
+    run=mo.ui.run_button(label='Run CLIP and SAM')
+    mo.vstack([mo.md('### Try it: change the controls, press Run, read the result below'),mo.hstack([image_id,description_style,negative,run],justify='start',gap=1.5),mo.hstack([prompt_x,prompt_y],justify='start',gap=1.5)],gap=.5)
+    return description_style, image_id, negative, prompt_x, prompt_y, run
+
+
+@app.cell(hide_code=True)
+def _(day3, image_id, mo, negative, plt, prompt_x, prompt_y):
+    from PIL import Image as _PImage
+    _im=_PImage.open(day3.ASSETS/(image_id.value+'.jpg')).convert('RGB')
+    _w,_h=_im.size
+    _fig,_ax=plt.subplots(figsize=(4.2,3.2),layout='constrained')
+    _ax.imshow(_im)
+    _ax.plot(prompt_x.value*(_w-1),prompt_y.value*(_h-1),'+',color='lime',markersize=18,markeredgewidth=3)
+    if negative.value:_ax.plot(.6*(_w-1),.3*(_h-1),'x',color='red',markersize=14,markeredgewidth=3)
+    _ax.axis('off');_ax.set_title('Your point (live): + include'+(', x exclude' if negative.value else ''),fontsize=9)
+    plt.close(_fig)
+    _fig
+    return
+
+
+@app.cell(hide_code=True)
 def _(cosine, day3, description_style, image_id, mo, negative, np, pixel_prompt, plt, probabilities, prompt_x, prompt_y, run, torch):
     from PIL import Image
     prompt_result=None
@@ -154,25 +176,6 @@ def _(cosine, day3, description_style, image_id, mo, negative, np, pixel_prompt,
 **Try:** (1) Bare labels ↔ photo descriptions with geometry fixed: which score moves most? (2) Restore the text; move the point from the bus body to a window or a person: what does the mask become? (3) Add the negative point: which region disappears? (4) Why does adding or removing one candidate text change every probability?''')])
     _view
     return (prompt_result,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### 4 · Stretch: box prompt
-    `pixel_box(box, size)`: `box` Python list `[x0, y0, x1, y1]` of normalized floats in [0,1] with x0 < x1 and y0 < y1 (top-left, bottom-right corner); `size`: `(W,H)` Python int tuple, W,H ≥ 2. Return a Python list of four floats in original-image pixels, same order: multiply x values by W−1 and y values by H−1, no rounding. Preserve inputs. `day3.spatial_mask({'box': pixel_box(...)}, image_id)` then returns `{'mask': bool (H,W), ...}` from SAM.
-    """)
-    return
-
-
-@app.cell
-def _(np, torch):
-    def pixel_box(box, size):
-        # TODO 4: map a normalized xyxy box to original-image pixels.
-        result=None
-        # END TODO 4
-        return result
-    return (pixel_box,)
 
 
 @app.cell(hide_code=True)
